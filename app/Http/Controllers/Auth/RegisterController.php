@@ -50,21 +50,32 @@ class RegisterController extends Controller
         return Validator::make($data, [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'phone' => ['required', 'string', 'regex:/^(\+62|62|0)8[0-9]{8,12}$/'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ], [
+            'phone.regex' => 'Nomor WhatsApp tidak valid. Contoh: 081234567890',
         ]);
     }
 
-    /**
-     * Create a new user instance after a valid registration.
-     *
-     * @return User
-     */
     protected function create(array $data)
     {
         return User::create([
             'name' => $data['name'],
             'email' => $data['email'],
+            'phone' => $this->normalizePhone($data['phone']),
+            'role' => 'customer',
             'password' => Hash::make($data['password']),
         ]);
+    }
+
+    private function normalizePhone(string $phone): string
+    {
+        $phone = ltrim(preg_replace('/[^0-9+]/', '', $phone), '+');
+
+        if (str_starts_with($phone, '0')) {
+            $phone = '62' . substr($phone, 1);
+        }
+
+        return $phone;
     }
 }
