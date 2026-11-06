@@ -53,6 +53,14 @@
                                 </li>
                             @endif
                         @else
+                            @if (Auth::user()->isAdmin())
+                                <li class="nav-item d-flex align-items-center me-3">
+                                    <a class="nav-link" href="{{ route('admin.dashboard') }}">Dashboard Admin</a>
+                                </li>
+                                <li class="nav-item d-flex align-items-center me-3">
+                                    <a class="nav-link" href="{{ route('admin.courts.index') }}">Kelola Lapangan</a>
+                                </li>
+                            @endif
                             <li class="nav-item d-flex align-items-center me-3">
                                 <span class="navbar-text">{{ Auth::user()->name }}</span>
                             </li>
