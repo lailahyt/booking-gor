@@ -5,11 +5,10 @@ use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\CourtController;
+use App\Http\Controllers\CourtListingController;
 
-Route::get('/', function () {
-    return view('welcome');
-});
-
+Route::get('/', [CourtListingController::class, 'index'])->name('courts.index');
+Route::get('/lapangan/{court}', [CourtListingController::class, 'show'])->name('courts.show');
 Auth::routes();
 
 Route::get('/home', [HomeController::class, 'index'])->name('home');
