@@ -5,6 +5,9 @@
         @if (session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
+        @if (session('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
 
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="mb-0">Detail Booking</h4>
@@ -41,19 +44,34 @@
 
                     @if ($booking->notes)
                         <dt class="col-sm-4">Catatan</dt>
-                        <dd class="col-sm-8 mb-0">{{ $booking->notes }}</dd>
+                        <dd class="col-sm-8">{{ $booking->notes }}</dd>
+                    @endif
+
+                    @if ($booking->status === 'cancelled' && $booking->cancelled_at)
+                        <dt class="col-sm-4">Dibatalkan</dt>
+                        <dd class="col-sm-8 mb-0">
+                            {{ $booking->cancelled_at->locale('id')->translatedFormat('j F Y, H:i') }}
+                            @if ($booking->cancel_reason)
+                                &middot; {{ $booking->cancel_reason }}
+                            @endif
+                        </dd>
                     @endif
                 </dl>
             </div>
         </div>
 
-        @if ($booking->status === 'pending')
+        @if ($booking->isExpired())
+            <div class="alert alert-secondary small">
+                Booking ini kedaluwarsa karena tidak dikonfirmasi admin tepat waktu, jadi jamnya sudah dibuka kembali.
+                Silakan pesan ulang kalau masih ingin bermain.
+            </div>
+        @elseif ($booking->status === 'pending')
             <div class="alert alert-warning small">
                 Menunggu konfirmasi admin
                 @if ($booking->expires_at)
-                    sampai pukul {{ $booking->expires_at->format('H:i') }}
+                    sampai pukul {{ $booking->expires_at->format('H:i') }}.
                 @endif
-                . Setelah itu booking dianggap batal.
+                Setelah itu booking dianggap batal.
             </div>
 
             @if ($booking->whatsappUrl())
@@ -63,6 +81,23 @@
             @endif
         @endif
 
-        <a href="{{ route('courts.index') }}" class="btn btn-outline-secondary">Kembali ke daftar lapangan</a>
+        @if ($booking->canBeCancelledByCustomer())
+            <form method="POST" action="{{ route('bookings.cancel', $booking) }}" class="d-inline"
+                onsubmit="return confirm('Batalkan booking ini?');">
+                @csrf
+                <button type="submit" class="btn btn-outline-danger">Batalkan Booking</button>
+            </form>
+        @elseif (in_array($booking->status, ['pending', 'confirmed'], true) && !$booking->isExpired())
+            <p class="text-muted small mt-3 mb-0">
+                Pembatalan sendiri hanya bisa paling lambat {{ \App\Models\Booking::CANCEL_LIMIT_HOURS }} jam sebelum jam
+                main.
+                Untuk membatalkan sekarang, silakan hubungi admin.
+            </p>
+        @endif
+
+        <div class="mt-3">
+            <a href="{{ route('bookings.index') }}" class="btn btn-outline-secondary">Booking Saya</a>
+            <a href="{{ route('courts.index') }}" class="btn btn-outline-secondary">Daftar Lapangan</a>
+        </div>
     </div>
 @endsection

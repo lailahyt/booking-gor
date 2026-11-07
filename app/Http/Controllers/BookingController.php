@@ -11,9 +11,7 @@ use Illuminate\Support\Carbon;
 
 class BookingController extends Controller
 {
-    public function __construct(private BookingService $bookings)
-    {
-    }
+    public function __construct(private BookingService $bookings) {}
 
     /**
      * Halaman ringkasan sebelum konfirmasi.
@@ -80,6 +78,30 @@ class BookingController extends Controller
 
         return redirect()->route('bookings.show', $booking)
             ->with('success', 'Booking berhasil dibuat. Kirim detailnya ke admin lewat WhatsApp agar cepat dikonfirmasi.');
+    }
+
+    public function index(Request $request)
+    {
+        $bookings = Booking::with('court')
+            ->where('user_id', $request->user()->id)
+            ->orderByDesc('booking_date')
+            ->orderByDesc('start_time')
+            ->paginate(10);
+
+        return view('bookings.index', compact('bookings'));
+    }
+
+    public function cancel(Request $request, Booking $booking)
+    {
+        abort_unless($booking->user_id === $request->user()->id, 403);
+
+        try {
+            $this->bookings->cancelByCustomer($booking, $request->user());
+        } catch (BookingException $e) {
+            return redirect()->route('bookings.show', $booking)->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('bookings.show', $booking)->with('success', 'Booking berhasil dibatalkan.');
     }
 
     public function show(Request $request, Booking $booking)

@@ -125,15 +125,16 @@ class BookingService
                 throw new BookingException('Lapangan ini sedang tidak tersedia.');
             }
 
+            // booking menunggu yang sudah kedaluwarsa tidak dihitung
             $activeCount = Booking::where('user_id', $user->id)
-                ->whereIn('status', [Booking::STATUS_PENDING, Booking::STATUS_CONFIRMED])
+                ->active()
                 ->where('booking_date', '>=', today()->toDateString())
                 ->count();
 
             if ($activeCount >= self::MAX_ACTIVE_BOOKINGS) {
                 throw new BookingException(
                     'Kamu sudah punya ' . $activeCount . ' booking aktif. Batas maksimal adalah '
-                    . self::MAX_ACTIVE_BOOKINGS . ' booking aktif.'
+                        . self::MAX_ACTIVE_BOOKINGS . ' booking aktif.'
                 );
             }
 
@@ -166,6 +167,43 @@ class BookingService
                 'expires_at' => $expiresAt,
                 'notes' => $notes,
             ]);
+        });
+    }
+
+    /**
+     * Pembatalan oleh pelanggan. Booking dikunci selama proses supaya tidak
+     * bertabrakan dengan konfirmasi admin di saat yang sama.
+     */
+    public function cancelByCustomer(Booking $booking, User $user): Booking
+    {
+        return DB::transaction(function () use ($booking, $user) {
+            $locked = Booking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
+
+            if ($locked->user_id !== $user->id) {
+                throw new BookingException('Booking ini bukan milikmu.');
+            }
+
+            if (
+                ! in_array($locked->status, [Booking::STATUS_PENDING, Booking::STATUS_CONFIRMED], true)
+                || $locked->isExpired()
+            ) {
+                throw new BookingException('Booking ini sudah tidak bisa dibatalkan.');
+            }
+
+            if (! $locked->canBeCancelledByCustomer()) {
+                throw new BookingException(
+                    'Pembatalan hanya bisa dilakukan paling lambat ' . Booking::CANCEL_LIMIT_HOURS
+                        . ' jam sebelum jam main. Silakan hubungi admin.'
+                );
+            }
+
+            $locked->update([
+                'status' => Booking::STATUS_CANCELLED,
+                'cancelled_at' => now(),
+                'cancel_reason' => 'Dibatalkan oleh pelanggan',
+            ]);
+
+            return $locked;
         });
     }
 

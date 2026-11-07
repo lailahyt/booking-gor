@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class Booking extends Model
 {
@@ -26,6 +27,8 @@ class Booking extends Model
     public const PAYMENT_UNPAID   = 'unpaid';
     public const PAYMENT_PAID     = 'paid';
     public const PAYMENT_REFUNDED = 'refunded';
+
+    public const CANCEL_LIMIT_HOURS = 3;
 
     // Sumber booking
     public const SOURCE_WEB   = 'web';
@@ -84,6 +87,10 @@ class Booking extends Model
 
     public function statusLabel(): string
     {
+        if ($this->isExpired()) {
+            return 'Kedaluwarsa';
+        }
+
         return match ($this->status) {
             self::STATUS_PENDING => 'Menunggu Konfirmasi',
             self::STATUS_CONFIRMED => 'Dikonfirmasi',
@@ -96,6 +103,10 @@ class Booking extends Model
 
     public function statusColor(): string
     {
+        if ($this->isExpired()) {
+            return 'secondary';
+        }
+
         return match ($this->status) {
             self::STATUS_PENDING => 'warning',
             self::STATUS_CONFIRMED => 'success',
@@ -103,6 +114,42 @@ class Booking extends Model
             self::STATUS_NO_SHOW => 'dark',
             default => 'secondary',
         };
+    }
+
+    // Waktu mulai main sebagai tanggal-jam lengkap
+    public function startsAt(): Carbon
+    {
+        return Carbon::parse($this->booking_date->toDateString() . ' ' . $this->start_time);
+    }
+
+    // Booking menunggu yang melewati batas konfirmasi
+    public function isExpired(): bool
+    {
+        return $this->status === self::STATUS_PENDING
+            && $this->expires_at !== null
+            && $this->expires_at->isPast();
+    }
+
+    // Boleh dibatalkan sendiri: masih aktif dan lebih dari 3 jam sebelum mulai
+    public function canBeCancelledByCustomer(): bool
+    {
+        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_CONFIRMED], true)
+            && ! $this->isExpired()
+            && $this->startsAt()->gt(now()->addHours(self::CANCEL_LIMIT_HOURS));
+    }
+
+    // Booking yang masih berlaku: dikonfirmasi, atau menunggu yang belum kedaluwarsa
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q) {
+            $q->where('status', self::STATUS_CONFIRMED)
+                ->orWhere(function (Builder $q) {
+                    $q->where('status', self::STATUS_PENDING)
+                        ->where(function (Builder $q) {
+                            $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                        });
+                });
+        });
     }
 
     public function whatsappUrl(): ?string

@@ -16,6 +16,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/lapangan/{court}/pesan', [BookingController::class, 'create'])->name('bookings.create');
     Route::post('/lapangan/{court}/pesan', [BookingController::class, 'store'])->name('bookings.store');
     Route::get('/booking/{booking}', [BookingController::class, 'show'])->name('bookings.show');
+    Route::get('/booking', [BookingController::class, 'index'])->name('bookings.index');
+    Route::post('/booking/{booking}/batal', [BookingController::class, 'cancel'])->name('bookings.cancel');
 });
 
 Route::get('/home', [HomeController::class, 'index'])->name('home');
