@@ -46,6 +46,7 @@ class CourtListingController extends Controller
             $slots[] = [
                 'label' => substr($start, 0, 5) . ' - ' . substr($end, 0, 5),
                 'start' => $start,
+                'end' => $end,
                 'status' => $isBooked ? 'booked' : ($isPast ? 'past' : 'free'),
             ];
         }

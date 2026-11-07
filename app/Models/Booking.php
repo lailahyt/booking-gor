@@ -76,6 +76,53 @@ class Booking extends Model
         return $this->hasMany(Payment::class);
     }
 
+    // URL memakai kode booking, bukan nomor urut, supaya tidak mudah ditebak
+    public function getRouteKeyName(): string
+    {
+        return 'code';
+    }
+
+    public function statusLabel(): string
+    {
+        return match ($this->status) {
+            self::STATUS_PENDING => 'Menunggu Konfirmasi',
+            self::STATUS_CONFIRMED => 'Dikonfirmasi',
+            self::STATUS_CANCELLED => 'Dibatalkan',
+            self::STATUS_NO_SHOW => 'Tidak Datang',
+            self::STATUS_COMPLETED => 'Selesai',
+            default => $this->status,
+        };
+    }
+
+    public function statusColor(): string
+    {
+        return match ($this->status) {
+            self::STATUS_PENDING => 'warning',
+            self::STATUS_CONFIRMED => 'success',
+            self::STATUS_CANCELLED => 'danger',
+            self::STATUS_NO_SHOW => 'dark',
+            default => 'secondary',
+        };
+    }
+
+    public function whatsappUrl(): ?string
+    {
+        $number = preg_replace('/\D/', '', (string) config('gor.whatsapp'));
+
+        if ($number === '') {
+            return null;
+        }
+
+        $text = "Halo admin, saya sudah membuat booking lapangan.\n"
+            . "Kode: {$this->code}\n"
+            . "Lapangan: {$this->court->name}\n"
+            . 'Tanggal: ' . $this->booking_date->locale('id')->translatedFormat('l, j F Y') . "\n"
+            . 'Jam: ' . substr($this->start_time, 0, 5) . ' - ' . substr($this->end_time, 0, 5) . "\n"
+            . 'Total: Rp' . number_format($this->total_price, 0, ',', '.');
+
+        return 'https://wa.me/' . $number . '?text=' . rawurlencode($text);
+    }
+
     /**
      * Booking yang dianggap "mengisi slot":
      * confirmed, completed, dan pending yang belum kedaluwarsa.
@@ -85,13 +132,13 @@ class Booking extends Model
     {
         return $query->where(function (Builder $q) {
             $q->whereIn('status', [self::STATUS_CONFIRMED, self::STATUS_COMPLETED])
-              ->orWhere(function (Builder $q) {
-                  $q->where('status', self::STATUS_PENDING)
-                    ->where(function (Builder $q) {
-                        $q->whereNull('expires_at')
-                          ->orWhere('expires_at', '>', now());
-                    });
-              });
+                ->orWhere(function (Builder $q) {
+                    $q->where('status', self::STATUS_PENDING)
+                        ->where(function (Builder $q) {
+                            $q->whereNull('expires_at')
+                                ->orWhere('expires_at', '>', now());
+                        });
+                });
         });
     }
 
