@@ -207,6 +207,77 @@ class BookingService
         });
     }
 
+    /**
+     * Aksi admin pada booking: confirm, cancel, pay, complete, no_show.
+     * Aturan aksi mana yang boleh ada di Booking::adminActions().
+     * Mengembalikan pesan sukses, atau melempar BookingException.
+     */
+    public function applyAdminAction(Booking $booking, string $action): string
+    {
+        return DB::transaction(function () use ($booking, $action) {
+            // Kunci lapangan dulu (sama seperti create()), lalu bookingnya.
+            Court::whereKey($booking->court_id)->lockForUpdate()->firstOrFail();
+            $locked = Booking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
+
+            if (! in_array($action, $locked->adminActions(), true)) {
+                throw new BookingException('Aksi ini tidak bisa dilakukan pada status booking saat ini.');
+            }
+
+            switch ($action) {
+                case 'confirm':
+                    if ($locked->startsAt()->lte(now())) {
+                        throw new BookingException('Waktu main booking ini sudah lewat, jadi tidak bisa dikonfirmasi.');
+                    }
+
+                    // Booking yang kedaluwarsa jamnya mungkin sudah dipesan orang lain.
+                    $conflict = Booking::overlapping(
+                        $locked->court_id,
+                        $locked->booking_date->toDateString(),
+                        $locked->start_time,
+                        $locked->end_time
+                    )->where('id', '!=', $locked->id)->exists();
+
+                    if ($conflict) {
+                        throw new BookingException('Jam ini sudah dipakai booking lain, jadi booking ini tidak bisa dikonfirmasi.');
+                    }
+
+                    $locked->update(['status' => Booking::STATUS_CONFIRMED, 'expires_at' => null]);
+
+                    return 'Booking dikonfirmasi.';
+
+                case 'cancel':
+                    $wasPaid = $locked->payment_status === Booking::PAYMENT_PAID;
+
+                    $locked->update([
+                        'status' => Booking::STATUS_CANCELLED,
+                        'cancelled_at' => now(),
+                        'cancel_reason' => 'Dibatalkan oleh admin',
+                    ]);
+
+                    return $wasPaid
+                        ? 'Booking dibatalkan. Booking ini sudah lunas, jadi ingat memproses pengembalian dana secara manual.'
+                        : 'Booking dibatalkan.';
+
+                case 'pay':
+                    $locked->update(['payment_status' => Booking::PAYMENT_PAID]);
+
+                    return 'Pembayaran dicatat lunas.';
+
+                case 'complete':
+                    $locked->update(['status' => Booking::STATUS_COMPLETED]);
+
+                    return 'Booking ditandai selesai.';
+
+                case 'no_show':
+                    $locked->update(['status' => Booking::STATUS_NO_SHOW]);
+
+                    return 'Booking ditandai tidak datang.';
+            }
+
+            throw new BookingException('Aksi tidak dikenal.');
+        });
+    }
+
     private function generateCode(): string
     {
         do {

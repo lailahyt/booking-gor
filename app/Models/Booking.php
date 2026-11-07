@@ -204,4 +204,35 @@ class Booking extends Model
             ->where('end_time', '>', $start)
             ->blocking();
     }
+
+    // Aksi admin yang boleh dilakukan pada booking ini
+    public function adminActions(): array
+    {
+        $actions = [];
+
+        if ($this->status === self::STATUS_PENDING) {
+            $actions[] = 'confirm'; // yang kedaluwarsa pun boleh, dicek bentrok saat dikonfirmasi
+        }
+
+        if (in_array($this->status, [self::STATUS_PENDING, self::STATUS_CONFIRMED], true)) {
+            $actions[] = 'cancel';
+        }
+
+        if (
+            in_array($this->status, [self::STATUS_CONFIRMED, self::STATUS_COMPLETED], true)
+            && $this->payment_status === self::PAYMENT_UNPAID
+        ) {
+            $actions[] = 'pay';
+        }
+
+        // selesai dan tidak datang hanya setelah jam main dimulai
+        if ($this->status === self::STATUS_CONFIRMED && $this->startsAt()->lte(now())) {
+            if ($this->payment_status === self::PAYMENT_PAID) {
+                $actions[] = 'complete'; // harus lunas dulu supaya pendapatan tercatat
+            }
+            $actions[] = 'no_show';
+        }
+
+        return $actions;
+    }
 }

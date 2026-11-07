@@ -60,6 +60,9 @@
                                 <li class="nav-item d-flex align-items-center me-3">
                                     <a class="nav-link" href="{{ route('admin.courts.index') }}">Kelola Lapangan</a>
                                 </li>
+                                <li class="nav-item d-flex align-items-center me-3">
+                                    <a class="nav-link" href="{{ route('admin.bookings.index') }}">Kelola Booking</a>
+                                </li>
                             @endif
                             <li class="nav-item d-flex align-items-center me-3">
                                 <a class="nav-link" href="{{ route('bookings.index') }}">Booking Saya</a>

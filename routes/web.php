@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\CourtController;
 use App\Http\Controllers\CourtListingController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 
 Route::get('/', [CourtListingController::class, 'index'])->name('courts.index');
 Route::get('/lapangan/{court}', [CourtListingController::class, 'show'])->name('courts.show');
@@ -30,4 +31,8 @@ Route::middleware(['auth', 'admin'])
 
         Route::resource('courts', CourtController::class)->except(['show', 'destroy']);
         Route::patch('courts/{court}/toggle', [CourtController::class, 'toggle'])->name('courts.toggle');
+        Route::get('bookings', [AdminBookingController::class, 'index'])->name('bookings.index');
+        Route::post('bookings/{booking}/{action}', [AdminBookingController::class, 'action'])
+            ->whereIn('action', ['confirm', 'cancel', 'pay', 'complete', 'no_show'])
+            ->name('bookings.action');
     });
