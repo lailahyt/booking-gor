@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CourtController;
 use App\Http\Controllers\CourtListingController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
+use App\Http\Controllers\Admin\ReportController;
 
 Route::get('/', [CourtListingController::class, 'index'])->name('courts.index');
 Route::get('/lapangan/{court}', [CourtListingController::class, 'show'])->name('courts.show');
@@ -37,4 +38,7 @@ Route::middleware(['auth', 'admin'])
             ->name('bookings.action');
         Route::get('bookings/create', [AdminBookingController::class, 'create'])->name('bookings.create');
         Route::post('bookings', [AdminBookingController::class, 'store'])->name('bookings.store');
+        Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/excel', [ReportController::class, 'excel'])->name('reports.excel');
+        Route::get('reports/pdf', [ReportController::class, 'pdf'])->name('reports.pdf');
     });
