@@ -224,6 +224,25 @@ class BookingService
     }
 
     /**
+     * Membatalkan semua booking menunggu yang melewati batas waktu konfirmasi.
+     * Dijalankan penjadwal tiap menit. Mengembalikan jumlah booking yang dibatalkan.
+     *
+     * Satu perintah UPDATE saja, jadi aman bila admin mengonfirmasi di saat yang sama:
+     * booking yang sudah berstatus dikonfirmasi tidak ikut terpilih.
+     */
+    public function expirePending(): int
+    {
+        return Booking::where('status', Booking::STATUS_PENDING)
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<=', now())
+            ->update([
+                'status' => Booking::STATUS_CANCELLED,
+                'cancelled_at' => now(),
+                'cancel_reason' => 'Tidak dikonfirmasi tepat waktu',
+            ]);
+    }
+
+    /**
      * Pembatalan oleh pelanggan. Booking dikunci selama proses supaya tidak
      * bertabrakan dengan konfirmasi admin di saat yang sama.
      */
