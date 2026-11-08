@@ -63,10 +63,11 @@
                                 <li class="nav-item d-flex align-items-center me-3">
                                     <a class="nav-link" href="{{ route('admin.bookings.index') }}">Kelola Booking</a>
                                 </li>
+                            @else
+                                <li class="nav-item d-flex align-items-center me-3">
+                                    <a class="nav-link" href="{{ route('bookings.index') }}">Booking Saya</a>
+                                </li>
                             @endif
-                            <li class="nav-item d-flex align-items-center me-3">
-                                <a class="nav-link" href="{{ route('bookings.index') }}">Booking Saya</a>
-                            </li>
                             <li class="nav-item d-flex align-items-center me-3">
                                 <span class="navbar-text">{{ Auth::user()->name }}</span>
                             </li>

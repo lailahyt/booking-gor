@@ -14,6 +14,7 @@
     <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="mb-0">Kelola Booking</h4>
+            <a href="{{ route('admin.bookings.create') }}" class="btn btn-primary">Booking Manual</a>
         </div>
 
         @if (session('success'))

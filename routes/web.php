@@ -35,4 +35,6 @@ Route::middleware(['auth', 'admin'])
         Route::post('bookings/{booking}/{action}', [AdminBookingController::class, 'action'])
             ->whereIn('action', ['confirm', 'cancel', 'pay', 'complete', 'no_show'])
             ->name('bookings.action');
+        Route::get('bookings/create', [AdminBookingController::class, 'create'])->name('bookings.create');
+        Route::post('bookings', [AdminBookingController::class, 'store'])->name('bookings.store');
     });

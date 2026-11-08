@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Court;
 use App\Services\BookingService;
+use App\Support\Phone;
 use Illuminate\Http\Request;
 
 class BookingController extends Controller
@@ -69,6 +70,71 @@ class BookingController extends Controller
                 Booking::STATUS_CANCELLED => 'Dibatalkan',
             ],
         ]);
+    }
+
+    public function create()
+    {
+        return view('admin.bookings.create', [
+            'courts' => Court::active()->orderBy('name')->get(),
+            'minDate' => today()->toDateString(),
+            'maxDate' => today()->addDays(BookingService::MAX_DAYS_AHEAD)->toDateString(),
+            'maxHours' => BookingService::MAX_HOURS,
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        // rapikan nomor (hapus spasi, tanda hubung, kurung) sebelum divalidasi
+        $request->merge([
+            'customer_phone' => preg_replace('/[\s\-().]/', '', (string) $request->input('customer_phone')),
+        ]);
+
+        $data = $request->validate([
+            'court_id' => ['required', 'exists:courts,id'],
+            'date' => ['required', 'date_format:Y-m-d'],
+            'start_hour' => ['required', 'integer', 'between:0,23'],
+            'duration' => ['required', 'integer', 'between:' . BookingService::MIN_HOURS . ',' . BookingService::MAX_HOURS],
+            'customer_name' => ['required', 'string', 'max:100'],
+            'customer_phone' => ['required', 'string', 'regex:' . Phone::PATTERN],
+            'notes' => ['nullable', 'string', 'max:255'],
+        ], [
+            'court_id.required' => 'Pilih lapangan.',
+            'date.required' => 'Tanggal wajib diisi.',
+            'date.date_format' => 'Tanggal tidak valid.',
+            'customer_name.required' => 'Nama pelanggan wajib diisi.',
+            'customer_phone.required' => 'Nomor WhatsApp wajib diisi.',
+            'customer_phone.regex' => 'Nomor WhatsApp tidak valid. Contoh: 081234567890',
+        ]);
+
+        $court = Court::findOrFail($data['court_id']);
+        $startHour = (int) $data['start_hour'];
+        $endHour = $startHour + (int) $data['duration'];
+
+        if ($endHour > 23) {
+            return back()->withInput()->with(
+                'error',
+                'Jam selesai melewati 23:00. Pilih jam mulai yang lebih awal atau durasi yang lebih pendek.'
+            );
+        }
+
+        try {
+            $booking = $this->bookings->createManual(
+                $court,
+                $data['date'],
+                sprintf('%02d:00', $startHour),
+                sprintf('%02d:00', $endHour),
+                trim($data['customer_name']),
+                Phone::normalize($data['customer_phone']),
+                $data['notes'] ?? null,
+                $request->boolean('paid')
+            );
+        } catch (BookingException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->route('admin.bookings.index', ['date' => $booking->booking_date->toDateString()])
+            ->with('success', 'Booking manual dibuat dengan kode ' . $booking->code . '.');
     }
 
     public function action(Request $request, Booking $booking, string $action)

@@ -22,7 +22,7 @@ class BookingService
      * Periksa aturan dasar booking. Jam diberikan dalam format 'HH:00'.
      * Mengembalikan jumlah jam, atau melempar BookingException.
      */
-    public function checkRange(Court $court, string $date, string $start, string $end): int
+    public function checkRange(Court $court, string $date, string $start, string $end, bool $allowOngoing = false): int
     {
         if (! $court->is_active) {
             throw new BookingException('Lapangan ini sedang tidak tersedia.');
@@ -83,8 +83,14 @@ class BookingService
             ));
         }
 
-        if ($day->isToday() && $startHour <= now()->hour) {
-            throw new BookingException('Jam yang dipilih sudah lewat.');
+        if ($day->isToday()) {
+            // pelanggan: jam yang sudah dimulai tidak bisa dipesan.
+            // admin ($allowOngoing): jam yang sedang berjalan masih boleh (pelanggan datang langsung).
+            $passed = $allowOngoing ? $endHour <= now()->hour : $startHour <= now()->hour;
+
+            if ($passed) {
+                throw new BookingException('Jam yang dipilih sudah lewat.');
+            }
         }
 
         return $hours;
@@ -165,6 +171,53 @@ class BookingService
                 'payment_status' => Booking::PAYMENT_UNPAID,
                 'source' => Booking::SOURCE_WEB,
                 'expires_at' => $expiresAt,
+                'notes' => $notes,
+            ]);
+        });
+    }
+
+    /**
+     * Booking manual oleh admin (pesanan WhatsApp atau pelanggan yang datang langsung).
+     * Langsung berstatus dikonfirmasi, tanpa akun pelanggan, dan tidak kena batas booking aktif.
+     * Aturan bentrok dan penguncian sama seperti create().
+     */
+    public function createManual(
+        Court $court,
+        string $date,
+        string $start,
+        string $end,
+        string $name,
+        string $phone,
+        ?string $notes = null,
+        bool $paid = false
+    ): Booking {
+        $hours = $this->checkRange($court, $date, $start, $end, allowOngoing: true);
+
+        $startTime = $start . ':00';
+        $endTime = $end . ':00';
+
+        return DB::transaction(function () use ($court, $date, $startTime, $endTime, $hours, $name, $phone, $notes, $paid) {
+            $lockedCourt = Court::whereKey($court->id)->lockForUpdate()->firstOrFail();
+
+            if (Booking::overlapping($lockedCourt->id, $date, $startTime, $endTime)->exists()) {
+                throw new BookingException('Jam ini sudah terisi booking lain. Pilih jam atau lapangan yang lain.');
+            }
+
+            return Booking::create([
+                'code' => $this->generateCode(),
+                'user_id' => null,
+                'customer_name' => $name,
+                'customer_phone' => $phone,
+                'court_id' => $lockedCourt->id,
+                'booking_date' => $date,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'total_price' => $hours * $lockedCourt->price_per_hour,
+                'status' => Booking::STATUS_CONFIRMED,
+                'payment_method' => Booking::METHOD_ON_SITE,
+                'payment_status' => $paid ? Booking::PAYMENT_PAID : Booking::PAYMENT_UNPAID,
+                'source' => Booking::SOURCE_ADMIN,
+                'expires_at' => null,
                 'notes' => $notes,
             ]);
         });
