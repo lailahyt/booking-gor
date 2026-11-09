@@ -1,8 +1,246 @@
-// Fonts
-@import url('https://fonts.bunny.net/css?family=Nunito');
+// Fungsi Bootstrap dibutuhkan untuk menghitung warna turunan dari variabel tema
+@import 'bootstrap/scss/functions';
 
-// Variables
+// Tema (warna, font, bentuk)
 @import 'variables';
 
 // Bootstrap
 @import 'bootstrap/scss/bootstrap';
+
+// ------------------------------------------------------------
+// Variabel CSS aplikasi
+// ------------------------------------------------------------
+:root {
+    --app-primary: #{$primary};
+    --app-primary-dark: #14532d;
+    --app-accent: #a3e635;
+    --app-border: rgba(20, 83, 45, 0.12);
+    --app-shadow: 0 1px 2px rgba(16, 24, 20, 0.05), 0 6px 20px rgba(16, 24, 20, 0.06);
+    --bottom-nav-h: 4rem;
+}
+
+// ------------------------------------------------------------
+// Dasar
+// ------------------------------------------------------------
+body {
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.app-body {
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+.app-main {
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+
+    @include media-breakpoint-up(md) {
+        padding-top: 1.75rem;
+        padding-bottom: 3rem;
+    }
+}
+
+// Beri ruang di bawah halaman supaya isi tidak tertutup menu bawah
+.has-bottom-nav .app-main {
+    @include media-breakpoint-down(md) {
+        padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 1.5rem);
+    }
+}
+
+a:focus-visible,
+button:focus-visible {
+    outline: 2px solid var(--app-primary);
+    outline-offset: 2px;
+}
+
+// ------------------------------------------------------------
+// Bilah atas
+// ------------------------------------------------------------
+.app-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    padding-top: env(safe-area-inset-top);
+    background: rgba(255, 255, 255, 0.94);
+    border-bottom: 1px solid var(--app-border);
+    backdrop-filter: saturate(1.4) blur(8px);
+
+    .navbar {
+        padding-top: 0.6rem;
+        padding-bottom: 0.6rem;
+    }
+
+    .navbar-brand {
+        margin-right: 0;
+        font-weight: 700;
+        color: var(--app-primary-dark);
+    }
+
+    .nav-link {
+        padding: 0.5rem 0.9rem;
+        border-radius: 999px;
+        font-weight: 500;
+        color: var(--bs-body-color);
+
+        &:hover {
+            background: rgba(22, 101, 52, 0.07);
+        }
+
+        &.active {
+            font-weight: 600;
+            color: var(--app-primary);
+            background: rgba(22, 101, 52, 0.12);
+        }
+    }
+}
+
+.brand-mark {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.7rem;
+    color: #fff;
+    background: var(--app-primary);
+}
+
+.brand-name {
+    font-size: 1.05rem;
+    line-height: 1.1;
+}
+
+// ------------------------------------------------------------
+// Menu bawah (pelanggan dan tamu, hanya di layar kecil)
+// ------------------------------------------------------------
+.bottom-nav {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1030;
+    display: flex;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: #fff;
+    border-top: 1px solid var(--app-border);
+    box-shadow: 0 -4px 16px rgba(16, 24, 20, 0.06);
+
+    >* {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    @include media-breakpoint-up(md) {
+        display: none;
+    }
+}
+
+.bottom-nav__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: var(--bottom-nav-h);
+    padding: 0.4rem 0.25rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-decoration: none;
+    background: none;
+    border: 0;
+
+    &:hover {
+        color: var(--app-primary);
+        text-decoration: none;
+    }
+
+    &:focus-visible {
+        outline-offset: -3px;
+        border-radius: 0.5rem;
+    }
+
+    &.is-active {
+        color: var(--app-primary);
+    }
+}
+
+.bottom-nav__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.25rem;
+    height: 1.9rem;
+    border-radius: 999px;
+    transition: background-color 0.15s ease;
+}
+
+.bottom-nav__item.is-active .bottom-nav__icon {
+    background: rgba(22, 101, 52, 0.14);
+}
+
+.bottom-nav .dropdown-menu {
+    min-width: 13rem;
+    margin-bottom: 0.5rem !important;
+    border-color: var(--app-border);
+    box-shadow: var(--app-shadow);
+}
+
+.bottom-nav .dropdown-item {
+    min-height: 2.75rem;
+    display: flex;
+    align-items: center;
+}
+
+// ------------------------------------------------------------
+// Komponen umum
+// ------------------------------------------------------------
+.card {
+    border-color: var(--app-border);
+    box-shadow: var(--app-shadow);
+}
+
+.card-header {
+    font-weight: 600;
+}
+
+.alert {
+    border: 0;
+    border-radius: var(--bs-border-radius-lg);
+}
+
+.badge {
+    font-weight: 600;
+}
+
+.btn {
+    font-weight: 600;
+}
+
+// Elemen yang diketuk minimal sekitar 44px di layar kecil
+@include media-breakpoint-down(md) {
+    .btn:not(.btn-sm) {
+        min-height: 2.75rem;
+    }
+
+    .btn-sm {
+        min-height: 2.4rem;
+    }
+
+    .form-control:not(.form-control-sm),
+    .form-select:not(.form-select-sm) {
+        min-height: 3rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        scroll-behavior: auto !important;
+        transition: none !important;
+        animation: none !important;
+    }
+}

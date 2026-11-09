@@ -1,95 +1,43 @@
 <!doctype html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="id">
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- CSRF Token -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#166534">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>
+        @hasSection('title')
+            @yield('title') &middot;
+        @endif{{ config('gor.name', config('app.name')) }}
+    </title>
 
-    <!-- Fonts -->
-    <link rel="dns-prefetch" href="//fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700" rel="stylesheet">
 
-    <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 </head>
 
-<body>
+@php
+    $authUser = Auth::user();
+    $isAdmin = $authUser && $authUser->isAdmin();
+@endphp
+
+<body class="app-body {{ $isAdmin ? '' : 'has-bottom-nav' }}">
     <div id="app">
-        <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
-            <div class="container">
-                <a class="navbar-brand" href="{{ url('/') }}">
-                    {{ config('app.name', 'Laravel') }}
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
+        @include('partials.topbar')
 
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <!-- Left Side Of Navbar -->
-                    <ul class="navbar-nav me-auto">
-
-                    </ul>
-
-                    <!-- Right Side Of Navbar -->
-                    <ul class="navbar-nav ms-auto">
-                        <!-- Authentication Links -->
-                        @guest
-                            @if (Route::has('login'))
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('login') }}">{{ __('Login') }}</a>
-                                </li>
-                            @endif
-
-                            @if (Route::has('register'))
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('register') }}">{{ __('Register') }}</a>
-                                </li>
-                            @endif
-                        @else
-                            @if (Auth::user()->isAdmin())
-                                <li class="nav-item d-flex align-items-center me-3">
-                                    <a class="nav-link" href="{{ route('admin.dashboard') }}">Dashboard Admin</a>
-                                </li>
-                                <li class="nav-item d-flex align-items-center me-3">
-                                    <a class="nav-link" href="{{ route('admin.courts.index') }}">Kelola Lapangan</a>
-                                </li>
-                                <li class="nav-item d-flex align-items-center me-3">
-                                    <a class="nav-link" href="{{ route('admin.bookings.index') }}">Kelola Booking</a>
-                                </li>
-                                <li class="nav-item d-flex align-items-center me-3">
-                                    <a class="nav-link" href="{{ route('admin.reports.index') }}">Laporan</a>
-                                </li>
-                            @else
-                                <li class="nav-item d-flex align-items-center me-3">
-                                    <a class="nav-link" href="{{ route('bookings.index') }}">Booking Saya</a>
-                                </li>
-                            @endif
-                            <li class="nav-item d-flex align-items-center me-3">
-                                <span class="navbar-text">{{ Auth::user()->name }}</span>
-                            </li>
-                            <li class="nav-item d-flex align-items-center">
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <button type="submit" class="btn btn-outline-secondary btn-sm">Logout</button>
-                                </form>
-                            </li>
-                        @endguest
-                    </ul>
-                </div>
-            </div>
-        </nav>
-
-        <main class="py-4">
+        <main class="app-main">
             @yield('content')
         </main>
+
+        @unless ($isAdmin)
+            @include('partials.bottom-nav')
+        @endunless
     </div>
+
+    @stack('scripts')
 </body>
 
 </html>

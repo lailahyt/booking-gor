@@ -1,7 +1,34 @@
-// Body
-$body-bg: #f8fafc;
+// Tema aplikasi booking lapangan bulutangkis
+// Variabel ini dibaca Bootstrap sebelum dikompilasi (lihat app.scss).
 
-// Typography
-$font-family-sans-serif: 'Nunito', sans-serif;
-$font-size-base: 0.9rem;
-$line-height-base: 1.6;
+// Warna
+$primary: #166534; // hijau tua
+$body-bg: #f5f8f5; // putih kehijauan sangat terang
+$body-color: #1b2a21; // abu gelap kehijauan
+
+// Tipografi
+$font-family-sans-serif: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+$font-size-base: 1rem; // minimal 16px agar iOS tidak memperbesar halaman saat mengisi form
+$line-height-base: 1.55;
+$headings-font-weight: 700;
+
+// Bentuk
+$border-radius: 0.75rem;
+$border-radius-sm: 0.5rem;
+$border-radius-lg: 1rem;
+$border-radius-xl: 1.25rem;
+
+// Tautan
+$link-decoration: none;
+$link-hover-decoration: underline;
+
+// Tombol dan isian
+$btn-padding-y: 0.6rem;
+$btn-padding-x: 1.1rem;
+$btn-font-weight: 600;
+$input-padding-y: 0.65rem;
+$input-padding-x: 0.9rem;
+
+// Kartu
+$card-border-color: rgba(20, 83, 45, 0.12);
+$card-border-radius: $border-radius-lg;
