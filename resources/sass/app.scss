@@ -244,3 +244,395 @@ button:focus-visible {
         animation: none !important;
     }
 }
+
+// ------------------------------------------------------------
+// Beranda
+// ------------------------------------------------------------
+.hero {
+    padding: 1.5rem 1.25rem;
+    color: #fff;
+    background: linear-gradient(135deg, #14532d 0%, #166534 55%, #1f7a43 100%);
+    border-radius: 1.25rem;
+    box-shadow: var(--app-shadow);
+
+    h1 {
+        margin-bottom: 0.35rem;
+        font-size: 1.6rem;
+        line-height: 1.2;
+    }
+
+    p {
+        opacity: 0.92;
+    }
+
+    @include media-breakpoint-up(md) {
+        padding: 2.25rem 2rem;
+
+        h1 {
+            font-size: 2.1rem;
+        }
+    }
+}
+
+.court-card {
+    color: inherit;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+
+    &:hover {
+        color: inherit;
+        text-decoration: none;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 4px rgba(16, 24, 20, 0.06), 0 12px 28px rgba(16, 24, 20, 0.1);
+    }
+}
+
+.court-price {
+    font-weight: 700;
+    color: var(--app-primary-dark);
+    white-space: nowrap;
+
+    small {
+        font-weight: 500;
+        color: #6b7280;
+    }
+}
+
+.step {
+    display: flex;
+    gap: 0.85rem;
+    align-items: flex-start;
+    height: 100%;
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid var(--app-border);
+    border-radius: 1rem;
+}
+
+.step__no {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    font-weight: 700;
+    color: var(--app-primary-dark);
+    background: rgba(22, 101, 52, 0.12);
+    border-radius: 50%;
+}
+
+// ------------------------------------------------------------
+// Halaman jadwal
+// ------------------------------------------------------------
+.schedule-page {
+    // ruang untuk bilah ringkasan yang menempel di bawah
+    padding-bottom: 8rem;
+
+    @include media-breakpoint-up(md) {
+        padding-bottom: 6rem;
+    }
+}
+
+// Deretan yang bisa digeser ke samping (tanggal dan lapangan)
+.chip-row,
+.date-strip {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+.chip-row {
+    padding-bottom: 0.25rem;
+}
+
+.chip {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0.4rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--bs-body-color);
+    text-decoration: none;
+    background: #fff;
+    border: 1px solid var(--app-border);
+    border-radius: 999px;
+
+    &:hover {
+        color: var(--bs-body-color);
+        text-decoration: none;
+        background: rgba(22, 101, 52, 0.06);
+    }
+
+    &.is-active {
+        color: #fff;
+        background: var(--app-primary);
+        border-color: var(--app-primary);
+    }
+}
+
+.date-strip {
+    padding: 0.25rem 0.25rem 0.75rem;
+    margin: 0 -0.25rem;
+    scroll-snap-type: x proximity;
+}
+
+.date-chip {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 3.6rem;
+    padding: 0.5rem 0.25rem;
+    line-height: 1.15;
+    color: var(--bs-body-color);
+    text-decoration: none;
+    background: #fff;
+    border: 1px solid var(--app-border);
+    border-radius: 1rem;
+    scroll-snap-align: center;
+
+    &:hover {
+        color: var(--bs-body-color);
+        text-decoration: none;
+        background: rgba(22, 101, 52, 0.06);
+    }
+
+    &__dow,
+    &__mon {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+    }
+
+    &__day {
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+
+    &.is-active {
+        color: #fff;
+        background: var(--app-primary);
+        border-color: var(--app-primary);
+
+        .date-chip__dow,
+        .date-chip__mon {
+            color: rgba(255, 255, 255, 0.85);
+        }
+    }
+}
+
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    font-size: 0.8rem;
+    color: #5b6560;
+}
+
+.legend__item {
+    display: inline-flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.legend__dot {
+    width: 0.9rem;
+    height: 0.9rem;
+    background: #fff;
+    border: 1.5px solid rgba(22, 101, 52, 0.45);
+    border-radius: 0.3rem;
+
+    &--selected {
+        background: var(--app-primary);
+        border-color: var(--app-primary);
+    }
+
+    &--booked {
+        background: #eef0ee;
+        border-color: #b8c0bb;
+        border-style: dashed;
+    }
+}
+
+.slot-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.6rem;
+
+    @include media-breakpoint-up(md) {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    @include media-breakpoint-up(lg) {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}
+
+.slot {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 4.25rem;
+    padding: 0.5rem 0.25rem;
+    font-family: inherit;
+    line-height: 1.2;
+    color: inherit;
+    text-align: center;
+    background: #fff;
+    border: 1.5px solid var(--app-border);
+    border-radius: 1rem;
+
+    &__time {
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+
+    &__until {
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+}
+
+.slot--free {
+    cursor: pointer;
+    border-color: rgba(22, 101, 52, 0.45);
+    transition: background-color 0.12s ease, transform 0.12s ease;
+
+    .slot__time {
+        color: var(--app-primary-dark);
+    }
+
+    &:hover {
+        background: rgba(22, 101, 52, 0.06);
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+
+    &.is-selected {
+        color: #fff;
+        background: var(--app-primary);
+        border-color: var(--app-primary);
+
+        .slot__time,
+        .slot__until {
+            color: #fff;
+        }
+
+        &::after {
+            position: absolute;
+            top: 0.3rem;
+            right: 0.55rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            content: '\2713';
+        }
+    }
+}
+
+.slot--booked {
+    background: #eef0ee;
+    border-style: dashed;
+    border-color: #b8c0bb;
+
+    .slot__time {
+        color: #7b857f;
+        text-decoration: line-through;
+    }
+
+    .slot__until {
+        color: #7b857f;
+    }
+}
+
+.slot--past {
+    background: transparent;
+    border-style: dashed;
+    opacity: 0.6;
+}
+
+.slot-note {
+    min-height: 1.25rem;
+    font-size: 0.85rem;
+    color: #92400e;
+}
+
+// Bilah ringkasan yang menempel di bawah layar
+.action-bar {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1025; // di bawah menu bawah (1030), di atas isi halaman
+    padding: 0.75rem 0 calc(0.75rem + env(safe-area-inset-bottom));
+    background: #fff;
+    border-top: 1px solid var(--app-border);
+    box-shadow: 0 -6px 20px rgba(16, 24, 20, 0.1);
+
+    &[hidden] {
+        display: none !important;
+    }
+}
+
+// Di ponsel, bilah duduk tepat di atas menu bawah
+.has-bottom-nav .action-bar {
+    @include media-breakpoint-down(md) {
+        bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom));
+        padding-bottom: 0.75rem;
+    }
+}
+
+.action-bar__inner {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem 0.75rem;
+    align-items: center;
+
+    .btn {
+        grid-column: 1 / -1;
+    }
+
+    @include media-breakpoint-up(md) {
+        grid-template-columns: 1fr auto auto;
+
+        .btn {
+            grid-column: auto;
+        }
+    }
+}
+
+.action-bar__info {
+    min-width: 0;
+}
+
+.action-bar__title {
+    font-weight: 700;
+}
+
+.action-bar__sub {
+    overflow: hidden;
+    font-size: 0.8rem;
+    color: #6b7280;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.action-bar__price {
+    font-weight: 700;
+    color: var(--app-primary-dark);
+    white-space: nowrap;
+}
