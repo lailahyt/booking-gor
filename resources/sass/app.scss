@@ -636,3 +636,143 @@ button:focus-visible {
     color: var(--app-primary-dark);
     white-space: nowrap;
 }
+
+// ------------------------------------------------------------
+// Halaman booking dan akun (langkah C)
+// ------------------------------------------------------------
+.container.page-narrow {
+    max-width: 40rem;
+}
+
+.container.auth-page {
+    max-width: 29rem;
+    padding-top: 0.5rem;
+
+    @include media-breakpoint-up(md) {
+        padding-top: 2rem;
+    }
+}
+
+// Halaman dengan bilah tombol yang menempel di bawah
+.page-with-bar {
+    padding-bottom: 8rem;
+
+    @include media-breakpoint-up(md) {
+        padding-bottom: 6rem;
+    }
+}
+
+.note-box {
+    padding: 0.85rem 1rem;
+    font-size: 0.9rem;
+    background: rgba(22, 101, 52, 0.07);
+    border: 1px solid rgba(22, 101, 52, 0.15);
+    border-radius: 1rem;
+}
+
+// Ringkasan booking
+.summary-time {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--app-primary-dark);
+    letter-spacing: -0.02em;
+}
+
+.detail-list {
+    margin: 0;
+
+    >div {
+        display: flex;
+        gap: 1rem;
+        align-items: baseline;
+        justify-content: space-between;
+        padding: 0.7rem 0;
+        border-bottom: 1px solid var(--app-border);
+
+        &:last-child {
+            border-bottom: 0;
+        }
+    }
+
+    dt {
+        font-weight: 500;
+        color: #5b6560;
+    }
+
+    dd {
+        margin: 0;
+        font-weight: 600;
+        text-align: right;
+    }
+}
+
+// Spanduk status di halaman detail booking
+.status-banner {
+    padding: 1rem 1.1rem;
+    border: 1px solid transparent;
+    border-radius: 1rem;
+}
+
+.status-banner__title {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+@each $name in (warning, success, danger, secondary, dark) {
+    .status-banner--#{$name} {
+        color: var(--bs-#{$name}-text-emphasis);
+        background: var(--bs-#{$name}-bg-subtle);
+        border-color: var(--bs-#{$name}-border-subtle);
+    }
+}
+
+.btn-whatsapp {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: #0f766e;
+    --bs-btn-border-color: #0f766e;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #0b5f58;
+    --bs-btn-hover-border-color: #0b5f58;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #0b5f58;
+    --bs-btn-active-border-color: #0b5f58;
+}
+
+// Kartu booking untuk daftar di ponsel
+.booking-card {
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid var(--app-border);
+    border-radius: 1rem;
+    box-shadow: var(--app-shadow);
+}
+
+.booking-card__code {
+    font-size: 0.78rem;
+    color: #6b7280;
+    letter-spacing: 0.02em;
+}
+
+.booking-card__meta {
+    font-size: 0.9rem;
+    color: #5b6560;
+}
+
+.empty-state {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    color: #5b6560;
+}
+
+.empty-state__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--app-primary);
+    background: rgba(22, 101, 52, 0.1);
+    border-radius: 50%;
+}
