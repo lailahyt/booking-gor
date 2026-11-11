@@ -776,3 +776,89 @@ button:focus-visible {
     background: rgba(22, 101, 52, 0.1);
     border-radius: 50%;
 }
+
+// ------------------------------------------------------------
+// Admin (langkah D)
+// ------------------------------------------------------------
+.min-w-0 {
+    min-width: 0;
+}
+
+.page-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+
+    h1 {
+        margin: 0;
+    }
+}
+
+.stat-card {
+    height: 100%;
+    padding: 1rem 1.1rem;
+    background: #fff;
+    border: 1px solid var(--app-border);
+    border-radius: 1rem;
+    box-shadow: var(--app-shadow);
+}
+
+.stat-card__label {
+    font-size: 0.8rem;
+    color: #5b6560;
+}
+
+.stat-card__value {
+    margin-top: 0.15rem;
+    font-size: 1.45rem;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    word-break: break-word;
+}
+
+.stat-card--warning {
+    background: var(--bs-warning-bg-subtle);
+    border-color: var(--bs-warning-border-subtle);
+}
+
+.table-admin {
+    thead th {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #5b6560;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+        background: #f7faf7;
+    }
+}
+
+.list-row {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--app-border);
+
+    &:last-child {
+        border-bottom: 0;
+    }
+}
+
+.time-pill {
+    min-width: 6.2rem;
+    font-weight: 700;
+    color: var(--app-primary-dark);
+    white-space: nowrap;
+}
+
+.action-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+
+    form {
+        display: inline-block;
+    }
+}
