@@ -1,58 +1,120 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Booking GOR Bulutangkis
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi web untuk memesan lapangan bulutangkis per jam. Pelanggan bisa melihat jam yang masih kosong dan memesan sendiri lewat website. Admin mengelola semua jadwal di satu tempat, termasuk pesanan yang masuk lewat WhatsApp.
 
-## About Laravel
+Dibuat sebagai proyek portofolio dengan Laravel, berdasarkan cara kerja GOR bulutangkis nyata: pemesanan lewat WhatsApp dan bayar langsung di tempat.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Masalah yang diselesaikan
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Di GOR yang dijadikan acuan, pelanggan harus bertanya ke admin lewat WhatsApp untuk tahu jam yang kosong. Jadwal dicatat manual, sehingga mudah salah catat dan bisa terjadi pesanan ganda. Aplikasi ini memindahkan proses itu ke website tanpa menghilangkan kebiasaan lama (booking lewat WhatsApp dan bayar di GOR).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Fitur
 
-## Learning Laravel
+**Pelanggan**
+- Melihat daftar lapangan dan jadwal tanpa perlu login
+- Daftar dan masuk, lalu memesan lapangan per jam (1 sampai 4 jam)
+- Halaman detail booking dengan tombol WhatsApp ke admin
+- Halaman Booking Saya, dan pembatalan sendiri paling lambat 3 jam sebelum jam main
+- Tampilan nyaman di ponsel, dengan menu bawah
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+**Admin**
+- Dashboard ringkasan
+- Kelola lapangan: tambah, ubah, aktifkan atau nonaktifkan
+- Kelola booking: filter, lalu konfirmasi, batalkan, tandai lunas, selesai, atau tidak datang
+- Booking manual untuk pesanan yang masuk lewat WhatsApp atau pelanggan yang datang langsung
+- Laporan pendapatan per periode dengan ekspor Excel dan PDF
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+**Sistem**
+- Cek bentrok jadwal, dengan penguncian baris lapangan di dalam transaksi database, sehingga dua orang yang menekan tombol bersamaan tidak bisa mendapat jam yang sama
+- Booking yang belum dikonfirmasi admin dalam 2 jam dibatalkan otomatis oleh penjadwal (`bookings:expire`, berjalan tiap menit)
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Aturan booking
 
-## Agentic Development
+| Aturan | Nilai |
+|---|---|
+| Durasi | 1 sampai 4 jam, jam bulat (misalnya 19:00 sampai 21:00) |
+| Pemesanan di muka | Maksimal 14 hari ke depan |
+| Booking aktif per pelanggan | Maksimal 3 |
+| Batas konfirmasi admin | 2 jam (tidak melewati jam mulai) |
+| Batas pembatalan oleh pelanggan | Lebih dari 3 jam sebelum jam mulai |
+| Zona waktu | WITA (`Asia/Makassar`) |
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Teknologi
+
+- Laravel 13 (PHP 8.3 atau lebih baru)
+- MySQL
+- Bootstrap 5 lewat Laravel UI, dibangun dengan Vite
+- `maatwebsite/excel` untuk ekspor Excel dan `barryvdh/laravel-dompdf` untuk ekspor PDF
+
+## Cara menjalankan di komputer sendiri
+
+Yang dibutuhkan: PHP 8.3+, Composer, Node.js dan npm, serta MySQL.
 
 ```bash
-composer require laravel/boost --dev
+git clone https://github.com/lailahyt/booking-gor.git
+cd booking-gor
 
-php artisan boost:install
+composer install
+npm install
+
+cp .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Buat database kosong di MySQL (misalnya `booking_gor`), lalu ubah bagian database di file `.env`:
 
-## Contributing
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=booking_gor
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Lanjutkan dengan migrasi, data contoh, dan build tampilan:
 
-## Code of Conduct
+```bash
+php artisan migrate
+php artisan db:seed --class=BookingDemoSeeder
+npm run build
+php artisan serve
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Buka `http://localhost:8000`.
 
-## Security Vulnerabilities
+Agar pembatalan otomatis berjalan, jalankan penjadwal di terminal terpisah:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan schedule:work
+```
 
-## License
+### Akun contoh
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Data contoh dari `BookingDemoSeeder` berisi 4 lapangan (Rp30.000 per jam, buka 08:00 sampai 23:00) dan dua akun:
+
+| Peran | Email | Password |
+|---|---|---|
+| Admin | `admin@gor.test` | `password` |
+| Pelanggan | `pelanggan@gor.test` | `password` |
+
+Akun ini hanya untuk percobaan di komputer sendiri. Ganti password sebelum aplikasi dipakai sungguhan.
+
+## Struktur singkat
+
+```
+app/Services/BookingService.php      Aturan booking, cek bentrok, pembatalan
+app/Services/RevenueReportService.php Hitungan laporan pendapatan
+app/Console/Commands/                 Perintah bookings:expire
+app/Http/Controllers/Admin/           Dashboard, lapangan, booking, laporan
+resources/views/                      Tampilan Blade (pelanggan dan admin)
+routes/web.php                        Rute aplikasi
+```
+
+## Status
+
+Fitur utama sudah selesai dan bisa dipakai dengan sistem bayar di GOR. Pembayaran online (Midtrans sandbox) direncanakan sebagai tahap terpisah.
+
+## Penulis
+
+Laila Hayati — [GitHub](https://github.com/lailahyt)
