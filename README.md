@@ -1,54 +1,54 @@
-# Booking GOR Bulutangkis
+# Badminton Court Booking (Booking GOR)
 
-Aplikasi web untuk memesan lapangan bulutangkis per jam. Pelanggan bisa melihat jam yang masih kosong dan memesan sendiri lewat website. Admin mengelola semua jadwal di satu tempat, termasuk pesanan yang masuk lewat WhatsApp.
+A web app for booking badminton courts by the hour. Customers can see which time slots are free and book on their own through the website. Admins manage the whole schedule in one place, including bookings that come in through WhatsApp.
 
-Dibuat sebagai proyek portofolio dengan Laravel, berdasarkan cara kerja GOR bulutangkis nyata: pemesanan lewat WhatsApp dan bayar langsung di tempat.
+Built as a portfolio project with Laravel, based on how a real badminton hall works: bookings are made through WhatsApp and payment is made in person at the venue.
 
-## Masalah yang diselesaikan
+## Problem it solves
 
-Di GOR yang dijadikan acuan, pelanggan harus bertanya ke admin lewat WhatsApp untuk tahu jam yang kosong. Jadwal dicatat manual, sehingga mudah salah catat dan bisa terjadi pesanan ganda. Aplikasi ini memindahkan proses itu ke website tanpa menghilangkan kebiasaan lama (booking lewat WhatsApp dan bayar di GOR).
+At the hall used as a reference, customers had to message the admin on WhatsApp to find out which time slots were free. The schedule was recorded by hand, so mistakes and double bookings were easy to make. This app moves that process to a website without removing the existing habits (booking through WhatsApp and paying at the venue).
 
-## Fitur
+## Features
 
-**Pelanggan**
-- Melihat daftar lapangan dan jadwal tanpa perlu login
-- Daftar dan masuk, lalu memesan lapangan per jam (1 sampai 4 jam)
-- Halaman detail booking dengan tombol WhatsApp ke admin
-- Halaman Booking Saya, dan pembatalan sendiri paling lambat 3 jam sebelum jam main
-- Tampilan nyaman di ponsel, dengan menu bawah
+**Customers**
+- View the list of courts and their schedules without logging in
+- Register and log in, then book a court by the hour (1 to 4 hours)
+- Booking detail page with a WhatsApp button to contact the admin
+- "My Bookings" page, and self-cancellation up to 3 hours before the start time
+- Mobile-friendly layout with a bottom menu
 
 **Admin**
-- Dashboard ringkasan
-- Kelola lapangan: tambah, ubah, aktifkan atau nonaktifkan
-- Kelola booking: filter, lalu konfirmasi, batalkan, tandai lunas, selesai, atau tidak datang
-- Booking manual untuk pesanan yang masuk lewat WhatsApp atau pelanggan yang datang langsung
-- Laporan pendapatan per periode dengan ekspor Excel dan PDF
+- Summary dashboard
+- Manage courts: add, edit, activate or deactivate
+- Manage bookings: filter, then confirm, cancel, mark as paid, completed, or no-show
+- Manual bookings for orders that come in through WhatsApp or for customers who walk in
+- Revenue reports by period, with Excel and PDF export
 
-**Sistem**
-- Cek bentrok jadwal, dengan penguncian baris lapangan di dalam transaksi database, sehingga dua orang yang menekan tombol bersamaan tidak bisa mendapat jam yang sama
-- Booking yang belum dikonfirmasi admin dalam 2 jam dibatalkan otomatis oleh penjadwal (`bookings:expire`, berjalan tiap menit)
+**System**
+- Schedule conflict check, using a row lock on the court inside a database transaction, so two people who click at the same time cannot get the same slot
+- Bookings that the admin has not confirmed within 2 hours are cancelled automatically by the scheduler (`bookings:expire`, runs every minute)
 
-## Aturan booking
+## Booking rules
 
-| Aturan | Nilai |
+| Rule | Value |
 |---|---|
-| Durasi | 1 sampai 4 jam, jam bulat (misalnya 19:00 sampai 21:00) |
-| Pemesanan di muka | Maksimal 14 hari ke depan |
-| Booking aktif per pelanggan | Maksimal 3 |
-| Batas konfirmasi admin | 2 jam (tidak melewati jam mulai) |
-| Batas pembatalan oleh pelanggan | Lebih dari 3 jam sebelum jam mulai |
-| Zona waktu | WITA (`Asia/Makassar`) |
+| Duration | 1 to 4 hours, on the hour (for example 19:00 to 21:00) |
+| Advance booking | Up to 14 days ahead |
+| Active bookings per customer | Maximum of 3 |
+| Admin confirmation deadline | 2 hours (never later than the start time) |
+| Customer cancellation deadline | More than 3 hours before the start time |
+| Time zone | WITA (`Asia/Makassar`) |
 
-## Teknologi
+## Tech stack
 
-- Laravel 13 (PHP 8.3 atau lebih baru)
+- Laravel 13 (PHP 8.3 or later)
 - MySQL
-- Bootstrap 5 lewat Laravel UI, dibangun dengan Vite
-- `maatwebsite/excel` untuk ekspor Excel dan `barryvdh/laravel-dompdf` untuk ekspor PDF
+- Bootstrap 5 via Laravel UI, built with Vite
+- `maatwebsite/excel` for Excel export and `barryvdh/laravel-dompdf` for PDF export
 
-## Cara menjalankan di komputer sendiri
+## Running it locally
 
-Yang dibutuhkan: PHP 8.3+, Composer, Node.js dan npm, serta MySQL.
+Requirements: PHP 8.3+, Composer, Node.js and npm, and MySQL.
 
 ```bash
 git clone https://github.com/lailahyt/booking-gor.git
@@ -61,7 +61,7 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-Buat database kosong di MySQL (misalnya `booking_gor`), lalu ubah bagian database di file `.env`:
+Create an empty MySQL database (for example `booking_gor`), then update the database section of your `.env` file:
 
 ```env
 DB_CONNECTION=mysql
@@ -72,7 +72,7 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-Lanjutkan dengan migrasi, data contoh, dan build tampilan:
+Then run the migrations, load the sample data, and build the frontend:
 
 ```bash
 php artisan migrate
@@ -81,40 +81,40 @@ npm run build
 php artisan serve
 ```
 
-Buka `http://localhost:8000`.
+Open `http://localhost:8000`.
 
-Agar pembatalan otomatis berjalan, jalankan penjadwal di terminal terpisah:
+For automatic cancellation to work, run the scheduler in a separate terminal:
 
 ```bash
 php artisan schedule:work
 ```
 
-### Akun contoh
+### Sample accounts
 
-Data contoh dari `BookingDemoSeeder` berisi 4 lapangan (Rp30.000 per jam, buka 08:00 sampai 23:00) dan dua akun:
+The sample data from `BookingDemoSeeder` contains 4 courts (Rp30,000 per hour, open 08:00 to 23:00) and two accounts:
 
-| Peran | Email | Password |
+| Role | Email | Password |
 |---|---|---|
 | Admin | `admin@gor.test` | `password` |
-| Pelanggan | `pelanggan@gor.test` | `password` |
+| Customer | `pelanggan@gor.test` | `password` |
 
-Akun ini hanya untuk percobaan di komputer sendiri. Ganti password sebelum aplikasi dipakai sungguhan.
+These accounts are for local testing only. Change the passwords before using the app for real.
 
-## Struktur singkat
+## Project structure
 
 ```
-app/Services/BookingService.php      Aturan booking, cek bentrok, pembatalan
-app/Services/RevenueReportService.php Hitungan laporan pendapatan
-app/Console/Commands/                 Perintah bookings:expire
-app/Http/Controllers/Admin/           Dashboard, lapangan, booking, laporan
-resources/views/                      Tampilan Blade (pelanggan dan admin)
-routes/web.php                        Rute aplikasi
+app/Services/BookingService.php       Booking rules, conflict check, cancellation
+app/Services/RevenueReportService.php Revenue report calculations
+app/Console/Commands/                 The bookings:expire command
+app/Http/Controllers/Admin/           Dashboard, courts, bookings, reports
+resources/views/                      Blade views (customer and admin)
+routes/web.php                        Application routes
 ```
 
 ## Status
 
-Fitur utama sudah selesai dan bisa dipakai dengan sistem bayar di GOR. Pembayaran online (Midtrans sandbox) direncanakan sebagai tahap terpisah.
+The main features are finished and the app can be used with the pay-at-the-venue flow. Online payment (Midtrans sandbox) is planned as a separate stage.
 
-## Penulis
+## Author
 
 Laila Hayati — [GitHub](https://github.com/lailahyt)
