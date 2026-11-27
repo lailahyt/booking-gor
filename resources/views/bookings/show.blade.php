@@ -8,7 +8,7 @@
         $isOwner = Auth::id() === $booking->user_id;
         $canCancel = $isOwner && $booking->canBeCancelledByCustomer();
         $waUrl = $isOwner && $booking->status === 'pending' && !$expired ? $booking->whatsappUrl() : null;
-        $hours = (int) substr($booking->end_time, 0, 2) - (int) substr($booking->start_time, 0, 2);
+        $hours = intdiv($booking->durationMinutes(), 60);
         $paymentMethod = $booking->payment_method === 'online' ? 'Online' : 'Bayar di GOR';
         $paymentStatus = match ($booking->payment_status) {
             'paid' => 'Lunas',

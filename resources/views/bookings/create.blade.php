@@ -22,15 +22,11 @@
                 <div class="card-body">
                     <div class="text-muted small">{{ $date->locale('id')->translatedFormat('l, j F Y') }}</div>
                     <div class="summary-time mb-1">{{ $start }} - {{ $end }}</div>
-                    <div class="text-muted mb-3">{{ $court->name }} &middot; {{ $hours }} jam</div>
+                    <div class="text-muted mb-3">{{ $court->name }} &middot; Paket {{ $hours }} jam</div>
 
                     <dl class="detail-list">
                         <div>
-                            <dt>Harga per jam</dt>
-                            <dd>Rp{{ number_format($court->price_per_hour, 0, ',', '.') }}</dd>
-                        </div>
-                        <div>
-                            <dt>Durasi</dt>
+                            <dt>Paket</dt>
                             <dd>{{ $hours }} jam</dd>
                         </div>
                         <div>
@@ -65,7 +61,7 @@
                 <div class="container page-narrow action-bar__inner">
                     <div class="action-bar__info">
                         <div class="action-bar__sub">Total pembayaran</div>
-                        <div class="action-bar__title">{{ $hours }} jam</div>
+                        <div class="action-bar__title">Paket {{ $hours }} jam</div>
                     </div>
                     <div class="action-bar__price fs-5">Rp{{ number_format($total, 0, ',', '.') }}</div>
                     <button type="submit" class="btn btn-primary" data-loading="Memproses...">Konfirmasi Booking</button>

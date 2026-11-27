@@ -6,6 +6,7 @@ use App\Exceptions\BookingException;
 use App\Models\Booking;
 use App\Models\Court;
 use App\Services\BookingService;
+use App\Support\Minutes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -16,7 +17,8 @@ class BookingController extends Controller
     /**
      * Halaman ringkasan sebelum konfirmasi.
      * Dibuka lewat GET supaya setelah login/daftar pelanggan kembali ke sini
-     * dengan pilihan jam yang sama.
+     * dengan pilihan jam yang sama. Durasi diturunkan dari end - start,
+     * harga selalu diambil dari paket di server.
      */
     public function create(Request $request, Court $court)
     {
@@ -31,7 +33,7 @@ class BookingController extends Controller
                 throw new BookingException('Maaf, jam yang kamu pilih sudah terisi. Silakan pilih jam lain.');
             }
         } catch (BookingException $e) {
-            return $this->backToSchedule($court, $date, $e->getMessage());
+            return $this->backToSchedule($court, $date, $e->getMessage(), $this->hoursFromRange($start, $end));
         }
 
         return view('bookings.create', [
@@ -40,7 +42,7 @@ class BookingController extends Controller
             'start' => $start,
             'end' => $end,
             'hours' => $hours,
-            'total' => $hours * $court->price_per_hour,
+            'total' => $court->priceForHours($hours),
             'confirmWindow' => BookingService::CONFIRM_WINDOW_HOURS,
         ]);
     }
@@ -73,7 +75,12 @@ class BookingController extends Controller
                 $data['notes'] ?? null
             );
         } catch (BookingException $e) {
-            return $this->backToSchedule($court, $data['date'], $e->getMessage());
+            return $this->backToSchedule(
+                $court,
+                $data['date'],
+                $e->getMessage(),
+                $this->hoursFromRange($data['start'], $data['end'])
+            );
         }
 
         return redirect()->route('bookings.show', $booking)
@@ -116,10 +123,30 @@ class BookingController extends Controller
         return view('bookings.show', compact('booking'));
     }
 
-    private function backToSchedule(Court $court, string $date, string $message)
+    // Kembali ke jadwal dengan paket yang sama, supaya pelanggan langsung melihat pilihan jam lain
+    private function backToSchedule(Court $court, string $date, string $message, ?int $hours = null)
     {
         return redirect()
-            ->route('courts.show', ['court' => $court, 'date' => $date])
+            ->route('courts.show', array_filter([
+                'court' => $court,
+                'date' => $date,
+                'hours' => $hours,
+            ]))
             ->with('error', $message);
+    }
+
+    // Paket (3 atau 4 jam) dari jam mulai dan selesai, atau null bila bukan paket yang sah
+    private function hoursFromRange(string $start, string $end): ?int
+    {
+        $startMinute = Minutes::parse($start);
+        $endMinute = Minutes::parse($end);
+
+        if ($startMinute === null || $endMinute === null || ($endMinute - $startMinute) % 60 !== 0) {
+            return null;
+        }
+
+        $hours = intdiv($endMinute - $startMinute, 60);
+
+        return in_array($hours, BookingService::PACKAGE_HOURS, true) ? $hours : null;
     }
 }

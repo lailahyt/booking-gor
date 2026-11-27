@@ -4,13 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Court;
+use App\Services\BookingService;
+use App\Support\Minutes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 class CourtListingController extends Controller
 {
-    public const MAX_DAYS_AHEAD = 14;
+    public function __construct(private BookingService $bookings) {}
 
     public function index()
     {
@@ -22,13 +24,19 @@ class CourtListingController extends Controller
             ->get(['court_id', 'start_time', 'end_time'])
             ->groupBy('court_id');
 
-        // Jumlah jam kosong hari ini per lapangan, dengan aturan yang sama dengan halaman jadwal.
+        // Jumlah pilihan jam mulai yang masih kosong hari ini (paket terpendek),
+        // dengan aturan yang sama dengan halaman jadwal.
         $freeToday = [];
 
         foreach ($courts as $court) {
-            $slots = $this->buildSlots($court, today(), $bookingsToday->get($court->id, collect()));
+            $starts = $this->buildStarts(
+                $court,
+                today(),
+                $this->defaultHours(),
+                $bookingsToday->get($court->id, collect())
+            );
 
-            $freeToday[$court->id] = collect($slots)->where('status', 'free')->count();
+            $freeToday[$court->id] = collect($starts)->where('status', 'free')->count();
         }
 
         return view('courts.index', compact('courts', 'freeToday'));
@@ -39,6 +47,7 @@ class CourtListingController extends Controller
         abort_unless($court->is_active, 404);
 
         $date = $this->resolveDate($request->query('date'));
+        $hours = $this->resolveHours($request->query('hours'));
 
         $bookings = Booking::where('court_id', $court->id)
             ->where('booking_date', $date->toDateString())
@@ -49,43 +58,63 @@ class CourtListingController extends Controller
             'court' => $court,
             'courts' => Court::active()->orderBy('name')->get(),
             'date' => $date,
-            'days' => collect(range(0, self::MAX_DAYS_AHEAD))->map(fn($i) => today()->addDays($i)),
-            'slots' => $this->buildSlots($court, $date, $bookings),
+            'hours' => $hours,
+            'packages' => collect(BookingService::PACKAGE_HOURS)
+                ->mapWithKeys(fn($h) => [$h => $court->priceForHours($h)])
+                ->all(),
+            'days' => collect(range(0, BookingService::MAX_DAYS_AHEAD))->map(fn($i) => today()->addDays($i)),
+            'starts' => $this->buildStarts($court, $date, $hours, $bookings),
             'minDate' => today()->toDateString(),
-            'maxDate' => today()->addDays(self::MAX_DAYS_AHEAD)->toDateString(),
+            'maxDate' => today()->addDays(BookingService::MAX_DAYS_AHEAD)->toDateString(),
         ]);
     }
 
     /**
-     * Daftar jam satu lapangan pada satu tanggal, dari jam buka sampai sebelum jam tutup.
-     * Status tiap jam: free (kosong), booked (terisi), past (sudah dimulai hari ini).
-     * Bentrok: mulai_lama < selesai_slot DAN selesai_lama > mulai_slot.
+     * Daftar jam mulai satu lapangan pada satu tanggal untuk satu paket (3 atau 4 jam).
+     * Jam mulai yang blok durasinya tidak muat sebelum jam tutup tidak ikut ditampilkan.
+     * Status tiap jam mulai: free (kosong), booked (blok bentrok dengan booking lain),
+     * past (sudah dimulai hari ini).
+     * Bentrok: mulai_lama < selesai_blok DAN selesai_lama > mulai_blok (dalam menit).
      */
-    private function buildSlots(Court $court, Carbon $date, Collection $bookings): array
+    private function buildStarts(Court $court, Carbon $date, int $hours, Collection $bookings): array
     {
-        $open = (int) substr($court->open_time, 0, 2);
-        $close = (int) substr($court->close_time, 0, 2);
+        $nowMinute = now()->hour * 60 + now()->minute;
 
-        $slots = [];
+        $taken = $bookings->map(fn($b) => [
+            Minutes::parse($b->start_time) ?? 0,
+            Minutes::parse($b->end_time) ?? 0,
+        ]);
 
-        for ($hour = $open; $hour < $close; $hour++) {
-            $start = sprintf('%02d:00:00', $hour);
-            $end = sprintf('%02d:00:00', $hour + 1);
+        $starts = [];
 
-            $isPast = $date->isToday() && $hour <= now()->hour;
-            $isBooked = $bookings->contains(
-                fn($b) => $b->start_time < $end && $b->end_time > $start
-            );
+        foreach ($this->bookings->startTimes($court, $hours) as $start) {
+            $startMinute = Minutes::parse($start);
+            $endMinute = $startMinute + $hours * 60;
 
-            $slots[] = [
-                'label' => substr($start, 0, 5) . ' - ' . substr($end, 0, 5),
+            $isPast = $date->isToday() && $startMinute <= $nowMinute;
+            $isBooked = $taken->contains(fn($range) => $range[0] < $endMinute && $range[1] > $startMinute);
+
+            $starts[] = [
                 'start' => $start,
-                'end' => $end,
+                'end' => Minutes::format($endMinute),
                 'status' => $isBooked ? 'booked' : ($isPast ? 'past' : 'free'),
             ];
         }
 
-        return $slots;
+        return $starts;
+    }
+
+    // Paket bawaan saat pelanggan belum memilih: yang terpendek
+    private function defaultHours(): int
+    {
+        return min(BookingService::PACKAGE_HOURS);
+    }
+
+    private function resolveHours(mixed $input): int
+    {
+        $hours = filter_var($input, FILTER_VALIDATE_INT);
+
+        return in_array($hours, BookingService::PACKAGE_HOURS, true) ? $hours : $this->defaultHours();
     }
 
     private function resolveDate(?string $input): Carbon
@@ -104,7 +133,7 @@ class CourtListingController extends Controller
         if (
             $date->format('Y-m-d') !== $input
             || $date->lt(today())
-            || $date->gt(today()->addDays(self::MAX_DAYS_AHEAD))
+            || $date->gt(today()->addDays(BookingService::MAX_DAYS_AHEAD))
         ) {
             return today();
         }

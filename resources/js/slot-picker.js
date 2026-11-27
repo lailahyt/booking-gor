@@ -1,17 +1,19 @@
-// Halaman jadwal lapangan: deretan tanggal dan pemilih jam.
-// Server tetap memeriksa semua aturan booking. Skrip ini hanya kemudahan tampilan.
+// Halaman jadwal lapangan: deretan tanggal dan pemilih jam mulai.
+// Server tetap memeriksa semua aturan booking dan menghitung harga.
+// Skrip ini hanya kemudahan tampilan.
 
 function formatRupiah(value) {
     return 'Rp' + value.toLocaleString('id-ID');
 }
 
-// Gulirkan tanggal dan lapangan yang terpilih ke tengah deretan
+// Gulirkan tanggal, lapangan, dan paket yang terpilih ke tengah deretan
 function initStrips() {
     document.querySelectorAll('.date-chip.is-active, .chip.is-active').forEach((element) => {
         element.scrollIntoView({ inline: 'center', block: 'nearest' });
     });
 }
 
+// Satu ketukan memilih satu jam mulai. Jam selesai otomatis (jam mulai + paket).
 function initSlotPicker() {
     const grid = document.getElementById('slot-grid');
     const form = document.getElementById('slot-form');
@@ -32,26 +34,22 @@ function initSlotPicker() {
     const title = document.getElementById('bar-title');
     const total = document.getElementById('bar-total');
     const submit = document.getElementById('btn-continue');
-    const note = document.getElementById('slot-note');
 
+    // hanya untuk tampilan; harga yang berlaku dihitung server
     const price = parseInt(grid.dataset.price, 10);
-    const maxHours = parseInt(grid.dataset.max, 10);
+    const hours = parseInt(grid.dataset.hours, 10);
 
-    // nomor urut slot yang dipilih, selalu berurutan
-    let selected = [];
-
-    const indexOf = (button) => parseInt(button.dataset.index, 10);
-    const byIndex = (index) => buttons.find((button) => indexOf(button) === index);
+    let selected = null;
 
     function render() {
         buttons.forEach((button) => {
-            const on = selected.includes(indexOf(button));
+            const on = button === selected;
 
             button.classList.toggle('is-selected', on);
             button.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
 
-        if (selected.length === 0) {
+        if (selected === null) {
             fieldStart.value = '';
             fieldEnd.value = '';
             submit.disabled = true;
@@ -60,56 +58,23 @@ function initSlotPicker() {
             return;
         }
 
-        const first = byIndex(selected[0]);
-        const last = byIndex(selected[selected.length - 1]);
+        // format HH:MM, sesuai yang diminta server
+        fieldStart.value = selected.dataset.start;
+        fieldEnd.value = selected.dataset.end;
 
-        // format HH:00, sesuai yang diminta server
-        fieldStart.value = first.dataset.start.slice(0, 5);
-        fieldEnd.value = last.dataset.end.slice(0, 5);
-
-        title.textContent = fieldStart.value + ' - ' + fieldEnd.value + ' \u00B7 ' + selected.length + ' jam';
-        total.textContent = formatRupiah(selected.length * price);
+        title.textContent = fieldStart.value + ' - ' + fieldEnd.value + ' \u00B7 ' + hours + ' jam';
+        total.textContent = formatRupiah(price);
 
         submit.disabled = false;
         bar.hidden = false;
     }
 
-    function handleTap(index) {
-        note.textContent = '';
-
-        const min = selected[0];
-        const max = selected[selected.length - 1];
-
-        if (selected.includes(index)) {
-            if (selected.length === 1) {
-                selected = [];
-            } else if (index === max) {
-                selected.pop();
-            } else if (index === min) {
-                selected.shift();
-            } else {
-                selected = [index]; // ketuk di tengah: mulai pilihan baru
-            }
-        } else if (selected.length > 0 && (index === max + 1 || index === min - 1)) {
-            if (selected.length < maxHours) {
-                if (index === max + 1) {
-                    selected.push(index);
-                } else {
-                    selected.unshift(index);
-                }
-            } else {
-                selected = [index];
-                note.textContent = 'Maksimal ' + maxHours + ' jam. Pilihan baru dimulai dari jam ini.';
-            }
-        } else {
-            selected = [index]; // tidak berurutan: mulai pilihan baru
-        }
-
-        render();
-    }
-
     buttons.forEach((button) => {
-        button.addEventListener('click', () => handleTap(indexOf(button)));
+        button.addEventListener('click', () => {
+            // ketuk lagi jam yang sama untuk membatalkan pilihan
+            selected = selected === button ? null : button;
+            render();
+        });
     });
 
     // Jangan kirim form kalau belum ada pilihan

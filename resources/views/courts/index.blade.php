@@ -7,8 +7,8 @@
         @include('partials.flash')
 
         <section class="hero mb-4">
-            <h1>Booking lapangan bulutangkis</h1>
-            <p class="mb-3">Lihat jam kosong, pilih jam, dan pesan dalam beberapa ketukan.</p>
+            <h1>Booking Lapangan Bulutangkis Gor Bunyamin</h1>
+            <p class="mb-3">Pilih paket 3 atau 4 jam, pilih jam mulai, dan pesan dalam beberapa ketukan.</p>
             <a href="#lapangan" class="btn btn-light">Lihat lapangan</a>
         </section>
 
@@ -28,8 +28,13 @@
                                         <div class="text-muted small">Lantai {{ $court->floor_type }}</div>
                                     @endif
                                 </div>
-                                <div class="court-price">
-                                    Rp{{ number_format($court->price_per_hour, 0, ',', '.') }}<small>/jam</small>
+                                <div class="text-end">
+                                    <div class="court-price">
+                                        Rp{{ number_format($court->price_3_hours, 0, ',', '.') }}<small>/3 jam</small>
+                                    </div>
+                                    <div class="small text-muted">
+                                        Rp{{ number_format($court->price_4_hours, 0, ',', '.') }}/4 jam
+                                    </div>
                                 </div>
                             </div>
 
@@ -46,11 +51,11 @@
                                 @if ($free === null)
                                     {{-- info jam kosong tidak tersedia --}}
                                 @elseif ($free > 0)
-                                    <span class="badge bg-success-subtle text-success-emphasis">{{ $free }} jam
-                                        kosong hari ini</span>
+                                    <span class="badge bg-success-subtle text-success-emphasis">{{ $free }} pilihan
+                                        jam mulai hari ini</span>
                                 @else
-                                    <span class="badge bg-secondary-subtle text-secondary-emphasis">Tidak ada jam kosong
-                                        hari ini</span>
+                                    <span class="badge bg-secondary-subtle text-secondary-emphasis">Tidak ada jam
+                                        mulai tersisa hari ini</span>
                                 @endif
                             </div>
 
@@ -72,9 +77,9 @@
                     <div class="step">
                         <span class="step__no">1</span>
                         <div>
-                            <strong>Pilih lapangan dan jam</strong>
-                            <div class="small text-muted">Lihat jam kosong, lalu ketuk jam yang kamu mau (1 sampai 4 jam
-                                berurutan).</div>
+                            <strong>Pilih paket dan jam mulai</strong>
+                            <div class="small text-muted">Pilih tanggal, paket 3 jam atau 4 jam, lalu ketuk jam mulai
+                                yang kamu mau.</div>
                         </div>
                     </div>
                 </div>

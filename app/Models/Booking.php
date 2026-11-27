@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use App\Support\Minutes;
 
 class Booking extends Model
 {
@@ -120,6 +121,12 @@ class Booking extends Model
     public function startsAt(): Carbon
     {
         return Carbon::parse($this->booking_date->toDateString() . ' ' . $this->start_time);
+    }
+
+    // Lama main dalam menit (selesai - mulai), misalnya 180 untuk paket 3 jam
+    public function durationMinutes(): int
+    {
+        return (Minutes::parse($this->end_time) ?? 0) - (Minutes::parse($this->start_time) ?? 0);
     }
 
     // Booking menunggu yang melewati batas konfirmasi

@@ -464,6 +464,54 @@ button:focus-visible {
     }
 }
 
+// Pilihan paket 3 jam atau 4 jam
+.package-picker {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+}
+
+.package-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 4rem;
+    padding: 0.6rem 0.5rem;
+    line-height: 1.25;
+    color: var(--bs-body-color);
+    text-align: center;
+    text-decoration: none;
+    background: #fff;
+    border: 1.5px solid var(--app-border);
+    border-radius: 1rem;
+
+    &:hover {
+        color: var(--bs-body-color);
+        text-decoration: none;
+        background: rgba(22, 101, 52, 0.06);
+    }
+
+    &__name {
+        font-weight: 700;
+    }
+
+    &__price {
+        font-size: 0.9rem;
+        color: var(--app-primary-dark);
+    }
+
+    &.is-active {
+        color: #fff;
+        background: var(--app-primary);
+        border-color: var(--app-primary);
+
+        .package-card__price {
+            color: #fff;
+        }
+    }
+}
+
 .slot-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
