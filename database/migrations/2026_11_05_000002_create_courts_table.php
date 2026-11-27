@@ -14,9 +14,17 @@ return new class extends Migration
             $table->string('floor_type')->nullable(); // karpet, kayu, semen
             $table->text('description')->nullable();
             $table->string('photo')->nullable();
-            $table->unsignedInteger('price_per_hour'); // rupiah, misal 30000
-            $table->time('open_time')->default('08:00:00');
-            $table->time('close_time')->default('23:00:00');
+
+            // Harga paket (bukan per jam), dalam rupiah. Server menghitung harga dari sini.
+            $table->unsignedInteger('price_3_hours'); // misal 110000
+            $table->unsignedInteger('price_4_hours'); // misal 140000
+
+            $table->time('open_time')->default('07:00:00');
+            $table->time('close_time')->default('23:30:00');
+
+            // Langkah jam mulai dalam menit: 30 (07:00, 07:30, ...) atau 60 (07:00, 08:00, ...)
+            $table->unsignedSmallInteger('slot_step_minutes')->default(30);
+
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

@@ -6,21 +6,52 @@ use App\Exceptions\BookingException;
 use App\Models\Booking;
 use App\Models\Court;
 use App\Models\User;
+use App\Support\Minutes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class BookingService
 {
-    public const MIN_HOURS = 1;
+    // Paket durasi yang boleh dipesan (jam). Satu-satunya daftar durasi di aplikasi.
+    public const PACKAGE_HOURS = [3, 4];
+
+    // Turunan dari PACKAGE_HOURS. Masih dipakai form booking manual admin dan halaman jadwal
+    // lama; dihapus saat Langkah 2 dan 3 selesai.
+    public const MIN_HOURS = 3;
     public const MAX_HOURS = 4;
+
     public const MAX_DAYS_AHEAD = 14;
     public const MAX_ACTIVE_BOOKINGS = 3;
     public const CONFIRM_WINDOW_HOURS = 2;
 
     /**
-     * Periksa aturan dasar booking. Jam diberikan dalam format 'HH:00'.
-     * Mengembalikan jumlah jam, atau melempar BookingException.
+     * Daftar jam mulai yang sah untuk satu lapangan dan satu paket (3 atau 4 jam),
+     * dari jam buka sampai (jam tutup dikurangi durasi), dengan langkah sesuai pengaturan lapangan.
+     * Hanya soal aturan jam; ketersediaan (bentrok, sudah lewat) diperiksa terpisah.
+     *
+     * @return string[] Format 'HH:MM'
+     */
+    public function startTimes(Court $court, int $hours): array
+    {
+        if (! in_array($hours, self::PACKAGE_HOURS, true)) {
+            return [];
+        }
+
+        $close = $court->closeMinutes();
+        $step = $court->stepMinutes();
+        $times = [];
+
+        for ($minute = $court->openMinutes(); $minute + $hours * 60 <= $close; $minute += $step) {
+            $times[] = Minutes::format($minute);
+        }
+
+        return $times;
+    }
+
+    /**
+     * Periksa aturan dasar booking. Jam diberikan dalam format 'HH:MM' (misalnya 19:30).
+     * Mengembalikan jumlah jam paket (3 atau 4), atau melempar BookingException.
      */
     public function checkRange(Court $court, string $date, string $start, string $end, bool $allowOngoing = false): int
     {
@@ -51,42 +82,48 @@ class BookingService
             throw new BookingException('Pemesanan hanya bisa untuk ' . self::MAX_DAYS_AHEAD . ' hari ke depan.');
         }
 
-        $pattern = '/^([01]\d|2[0-3]):00$/';
+        $startMinute = Minutes::parse($start);
+        $endMinute = Minutes::parse($end);
 
-        if (! preg_match($pattern, $start) || ! preg_match($pattern, $end)) {
-            throw new BookingException('Jam harus berupa jam bulat, misalnya 19:00.');
+        if ($startMinute === null || $endMinute === null || strlen($start) !== 5 || strlen($end) !== 5) {
+            throw new BookingException('Format jam tidak valid, contohnya 19:30.');
         }
 
-        $startHour = (int) substr($start, 0, 2);
-        $endHour = (int) substr($end, 0, 2);
-
-        if ($endHour <= $startHour) {
+        if ($endMinute <= $startMinute) {
             throw new BookingException('Jam selesai harus setelah jam mulai.');
         }
 
-        $hours = $endHour - $startHour;
+        $duration = $endMinute - $startMinute;
+        $hours = intdiv($duration, 60);
 
-        if ($hours < self::MIN_HOURS || $hours > self::MAX_HOURS) {
+        if ($duration % 60 !== 0 || ! in_array($hours, self::PACKAGE_HOURS, true)) {
             throw new BookingException(
-                'Durasi booking minimal ' . self::MIN_HOURS . ' jam dan maksimal ' . self::MAX_HOURS . ' jam.'
+                'Durasi booking harus paket ' . implode(' jam atau ', self::PACKAGE_HOURS) . ' jam.'
             );
         }
 
-        $open = (int) substr($court->open_time, 0, 2);
-        $close = (int) substr($court->close_time, 0, 2);
+        $open = $court->openMinutes();
+        $close = $court->closeMinutes();
 
-        if ($startHour < $open || $endHour > $close) {
+        if ($startMinute < $open || $endMinute > $close) {
             throw new BookingException(sprintf(
-                'Jam yang dipilih di luar jam operasional (%02d:00 - %02d:00).',
-                $open,
-                $close
+                'Jam yang dipilih di luar jam operasional (%s - %s).',
+                Minutes::format($open),
+                Minutes::format($close)
             ));
         }
 
+        // jam mulai harus pas dengan langkah lapangan, dihitung dari jam buka
+        if (($startMinute - $open) % $court->stepMinutes() !== 0) {
+            throw new BookingException('Jam mulai tidak sesuai jadwal lapangan ini. Pilih salah satu jam mulai yang tersedia.');
+        }
+
         if ($day->isToday()) {
+            $nowMinute = now()->hour * 60 + now()->minute;
+
             // pelanggan: jam yang sudah dimulai tidak bisa dipesan.
-            // admin ($allowOngoing): jam yang sedang berjalan masih boleh (pelanggan datang langsung).
-            $passed = $allowOngoing ? $endHour <= now()->hour : $startHour <= now()->hour;
+            // admin ($allowOngoing): booking yang sedang berjalan masih boleh (pelanggan datang langsung).
+            $passed = $allowOngoing ? $endMinute <= $nowMinute : $startMinute <= $nowMinute;
 
             if ($passed) {
                 throw new BookingException('Jam yang dipilih sudah lewat.');
@@ -165,7 +202,7 @@ class BookingService
                 'booking_date' => $date,
                 'start_time' => $startTime,
                 'end_time' => $endTime,
-                'total_price' => $hours * $lockedCourt->price_per_hour,
+                'total_price' => $lockedCourt->priceForHours($hours),
                 'status' => Booking::STATUS_PENDING,
                 'payment_method' => Booking::METHOD_ON_SITE,
                 'payment_status' => Booking::PAYMENT_UNPAID,
@@ -212,7 +249,7 @@ class BookingService
                 'booking_date' => $date,
                 'start_time' => $startTime,
                 'end_time' => $endTime,
-                'total_price' => $hours * $lockedCourt->price_per_hour,
+                'total_price' => $lockedCourt->priceForHours($hours),
                 'status' => Booking::STATUS_CONFIRMED,
                 'payment_method' => Booking::METHOD_ON_SITE,
                 'payment_status' => $paid ? Booking::PAYMENT_PAID : Booking::PAYMENT_UNPAID,

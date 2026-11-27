@@ -32,7 +32,11 @@
                             </span>
                         </div>
 
-                        <div class="fw-bold mt-2">Rp{{ number_format($court->price_per_hour, 0, ',', '.') }} / jam</div>
+                        <div class="fw-bold mt-2">
+                            3 jam Rp{{ number_format($court->price_3_hours, 0, ',', '.') }}
+                            &middot; 4 jam Rp{{ number_format($court->price_4_hours, 0, ',', '.') }}
+                        </div>
+                        <div class="booking-card__meta">Jam mulai tiap {{ $court->stepMinutes() }} menit</div>
 
                         <div class="d-flex gap-2 mt-3">
                             <a href="{{ route('admin.courts.edit', $court) }}"
@@ -60,7 +64,7 @@
                             <tr>
                                 <th>Nama</th>
                                 <th>Lantai</th>
-                                <th>Harga/jam</th>
+                                <th>Harga paket</th>
                                 <th>Jam operasional</th>
                                 <th>Status</th>
                                 <th class="text-end">Aksi</th>
@@ -71,8 +75,13 @@
                                 <tr>
                                     <td class="fw-semibold">{{ $court->name }}</td>
                                     <td>{{ $court->floor_type ?? '-' }}</td>
-                                    <td>Rp{{ number_format($court->price_per_hour, 0, ',', '.') }}</td>
+                                    <td>
+                                        3 jam Rp{{ number_format($court->price_3_hours, 0, ',', '.') }}<br>
+                                        4 jam Rp{{ number_format($court->price_4_hours, 0, ',', '.') }}
+                                    </td>
                                     <td>{{ substr($court->open_time, 0, 5) }} - {{ substr($court->close_time, 0, 5) }}
+                                        <div class="small text-muted">Jam mulai tiap {{ $court->stepMinutes() }} menit
+                                        </div>
                                     </td>
                                     <td>
                                         <span class="badge text-bg-{{ $court->is_active ? 'success' : 'secondary' }}">

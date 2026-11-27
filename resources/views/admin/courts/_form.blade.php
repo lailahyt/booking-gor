@@ -31,37 +31,62 @@
     @enderror
 </div>
 
-<div class="mb-3">
-    <label for="price_per_hour" class="form-label">Harga per jam (Rp)</label>
-    <input id="price_per_hour" type="number" name="price_per_hour" min="1000" step="1000" inputmode="numeric"
-        class="form-control @error('price_per_hour') is-invalid @enderror"
-        value="{{ old('price_per_hour', $court->price_per_hour ?? 30000) }}" required>
-    @error('price_per_hour')
-        <div class="invalid-feedback">{{ $message }}</div>
-    @enderror
+<div class="row">
+    <div class="col-6 mb-3">
+        <label for="price_3_hours" class="form-label">Harga paket 3 jam (Rp)</label>
+        <input id="price_3_hours" type="number" name="price_3_hours" min="1000" step="1000" inputmode="numeric"
+            class="form-control @error('price_3_hours') is-invalid @enderror"
+            value="{{ old('price_3_hours', $court->price_3_hours ?? 110000) }}" required>
+        @error('price_3_hours')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+    <div class="col-6 mb-3">
+        <label for="price_4_hours" class="form-label">Harga paket 4 jam (Rp)</label>
+        <input id="price_4_hours" type="number" name="price_4_hours" min="1000" step="1000" inputmode="numeric"
+            class="form-control @error('price_4_hours') is-invalid @enderror"
+            value="{{ old('price_4_hours', $court->price_4_hours ?? 140000) }}" required>
+        @error('price_4_hours')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
 </div>
 
 <div class="row">
     <div class="col-6 mb-3">
         <label for="open_time" class="form-label">Jam buka</label>
-        <input id="open_time" type="time" name="open_time" step="3600"
+        <input id="open_time" type="time" name="open_time" step="1800"
             class="form-control @error('open_time') is-invalid @enderror"
-            value="{{ old('open_time', isset($court) ? substr($court->open_time, 0, 5) : '08:00') }}" required>
+            value="{{ old('open_time', isset($court) ? substr($court->open_time, 0, 5) : '07:00') }}" required>
         @error('open_time')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
     </div>
     <div class="col-6 mb-3">
         <label for="close_time" class="form-label">Jam tutup</label>
-        <input id="close_time" type="time" name="close_time" step="3600"
+        <input id="close_time" type="time" name="close_time" step="1800"
             class="form-control @error('close_time') is-invalid @enderror"
-            value="{{ old('close_time', isset($court) ? substr($court->close_time, 0, 5) : '23:00') }}" required>
+            value="{{ old('close_time', isset($court) ? substr($court->close_time, 0, 5) : '23:30') }}" required>
         @error('close_time')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
     </div>
 </div>
-<div class="form-text mb-3 mt-n2">Jam buka dan tutup harus jam bulat, misalnya 08:00 dan 23:00.</div>
+<div class="form-text mb-3 mt-n2">Jam buka dan tutup boleh pas atau setengah jam, misalnya 07:00 dan 23:30.</div>
+
+<div class="mb-3">
+    <label for="slot_step_minutes" class="form-label">Langkah jam mulai</label>
+    @php $step = (int) old('slot_step_minutes', $court->slot_step_minutes ?? 30); @endphp
+    <select id="slot_step_minutes" name="slot_step_minutes"
+        class="form-select @error('slot_step_minutes') is-invalid @enderror" required>
+        <option value="30" @selected($step === 30)>Tiap 30 menit (07:00, 07:30, 08:00, ...)</option>
+        <option value="60" @selected($step === 60)>Tiap 60 menit (07:00, 08:00, 09:00, ...)</option>
+    </select>
+    @error('slot_step_minutes')
+        <div class="invalid-feedback">{{ $message }}</div>
+    @enderror
+    <div class="form-text">Menentukan jam mulai yang bisa dipilih pelanggan, dihitung dari jam buka.</div>
+</div>
 
 <div class="form-check mb-4">
     <input class="form-check-input" type="checkbox" name="is_active" id="is_active" value="1"
