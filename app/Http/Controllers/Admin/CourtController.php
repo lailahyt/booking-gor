@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Court;
+use App\Support\Minutes;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class CourtController extends Controller
 {
@@ -53,22 +55,52 @@ class CourtController extends Controller
 
     private function validated(Request $request): array
     {
+        $timePattern = '/^([01]\d|2[0-3]):(00|30)$/';
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'floor_type' => ['nullable', 'string', 'max:50'],
             'description' => ['nullable', 'string', 'max:1000'],
-            'price_per_hour' => ['required', 'integer', 'min:1000', 'max:1000000'],
-            'open_time' => ['required', 'regex:/^([01]\d|2[0-3]):00$/'],
-            'close_time' => ['required', 'regex:/^([01]\d|2[0-3]):00$/', 'after:open_time'],
+            'price_3_hours' => ['required', 'integer', 'min:1000', 'max:5000000'],
+            'price_4_hours' => ['required', 'integer', 'min:1000', 'max:5000000'],
+            'slot_step_minutes' => ['required', 'integer', 'in:' . implode(',', Court::STEP_OPTIONS)],
+            'open_time' => ['required', 'regex:' . $timePattern],
+            'close_time' => ['required', 'regex:' . $timePattern, 'after:open_time'],
         ], [
             'name.required' => 'Nama lapangan wajib diisi.',
-            'price_per_hour.required' => 'Harga per jam wajib diisi.',
-            'price_per_hour.integer' => 'Harga harus berupa angka bulat, misalnya 30000.',
-            'price_per_hour.min' => 'Harga minimal Rp1.000.',
-            'open_time.regex' => 'Jam buka harus jam bulat, misalnya 08:00.',
-            'close_time.regex' => 'Jam tutup harus jam bulat, misalnya 23:00.',
+            'price_3_hours.required' => 'Harga paket 3 jam wajib diisi.',
+            'price_3_hours.integer' => 'Harga harus berupa angka bulat, misalnya 110000.',
+            'price_3_hours.min' => 'Harga minimal Rp1.000.',
+            'price_4_hours.required' => 'Harga paket 4 jam wajib diisi.',
+            'price_4_hours.integer' => 'Harga harus berupa angka bulat, misalnya 140000.',
+            'price_4_hours.min' => 'Harga minimal Rp1.000.',
+            'slot_step_minutes.required' => 'Pilih langkah jam mulai.',
+            'slot_step_minutes.in' => 'Langkah jam mulai harus 30 atau 60 menit.',
+            'open_time.regex' => 'Jam buka harus pas atau setengah jam, misalnya 07:00 atau 07:30.',
+            'close_time.regex' => 'Jam tutup harus pas atau setengah jam, misalnya 23:00 atau 23:30.',
             'close_time.after' => 'Jam tutup harus lebih akhir dari jam buka.',
         ]);
+
+        $open = Minutes::parse($data['open_time']);
+        $close = Minutes::parse($data['close_time']);
+        $step = (int) $data['slot_step_minutes'];
+        $errors = [];
+
+        // jam mulai dihitung dari jam buka, jadi jam buka harus jatuh di kelipatan langkah
+        if ($open % $step !== 0) {
+            $errors['open_time'] = $step === 60
+                ? 'Dengan langkah 60 menit, jam buka harus jam bulat, misalnya 07:00.'
+                : 'Jam buka harus pas atau setengah jam, misalnya 07:00 atau 07:30.';
+        }
+
+        // paket terpendek 3 jam harus muat dalam jam operasional
+        if ($close - $open < 180) {
+            $errors['close_time'] = 'Jam operasional minimal 3 jam agar paket 3 jam bisa dipesan.';
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
 
         $data['is_active'] = $request->boolean('is_active');
 

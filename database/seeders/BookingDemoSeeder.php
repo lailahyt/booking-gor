@@ -32,15 +32,19 @@ class BookingDemoSeeder extends Seeder
             ]
         );
 
-        // 4 lapangan, harga Rp30.000 per jam
-        foreach (range(1, 4) as $i) {
+        // 3 lapangan, buka 07:00 sampai 23:30
+        // Paket: 3 jam = Rp110.000, 4 jam = Rp140.000
+        // Langkah jam mulai 30 menit (nilai final mengikuti jawaban admin GOR)
+        foreach (range(1, 3) as $i) {
             Court::updateOrCreate(
                 ['name' => "Lapangan $i"],
                 [
                     'floor_type' => 'karpet',
-                    'price_per_hour' => 30000,
-                    'open_time' => '08:00:00',
-                    'close_time' => '23:00:00',
+                    'price_3_hours' => 110000,
+                    'price_4_hours' => 140000,
+                    'open_time' => '07:00:00',
+                    'close_time' => '23:30:00',
+                    'slot_step_minutes' => 30,
                     'is_active' => true,
                 ]
             );
