@@ -42,6 +42,10 @@
                                 href="{{ route('admin.bookings.index') }}">Booking</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.members.*') ? 'active' : '' }}"
+                                href="{{ route('admin.members.index') }}">Member</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}"
                                 href="{{ route('admin.reports.index') }}">Laporan</a>
                         </li>

@@ -97,6 +97,9 @@
                             {{ $booking->customer_name }}
                             @if ($booking->source === 'admin')
                                 <span class="badge text-bg-light border">manual</span>
+                            @elseif ($booking->source === 'member')
+                                <a href="{{ route('admin.members.show', $booking->member_id) }}"
+                                    class="badge text-bg-info text-decoration-none">member</a>
                             @endif
                         </div>
                         <a href="https://wa.me/{{ preg_replace('/\D/', '', $booking->customer_phone) }}" target="_blank"
@@ -159,6 +162,9 @@
                                         {{ $booking->customer_name }}
                                         @if ($booking->source === 'admin')
                                             <span class="badge text-bg-light border">manual</span>
+                                        @elseif ($booking->source === 'member')
+                                            <a href="{{ route('admin.members.show', $booking->member_id) }}"
+                                                class="badge text-bg-info text-decoration-none">member</a>
                                         @endif
                                         <div class="small">
                                             <a href="https://wa.me/{{ preg_replace('/\D/', '', $booking->customer_phone) }}"

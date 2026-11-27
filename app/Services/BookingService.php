@@ -47,8 +47,16 @@ class BookingService
      * Periksa aturan dasar booking. Jam diberikan dalam format 'HH:MM' (misalnya 19:30).
      * Mengembalikan jumlah jam paket (3 atau 4), atau melempar BookingException.
      */
-    public function checkRange(Court $court, string $date, string $start, string $end, bool $allowOngoing = false): int
-    {
+    public function checkRange(
+        Court $court,
+        string $date,
+        string $start,
+        string $end,
+        bool $allowOngoing = false,
+        ?int $maxDaysAhead = null
+    ): int {
+        $maxDaysAhead ??= self::MAX_DAYS_AHEAD;
+
         if (! $court->is_active) {
             throw new BookingException('Lapangan ini sedang tidak tersedia.');
         }
@@ -72,8 +80,8 @@ class BookingService
             throw new BookingException('Tanggal yang dipilih sudah lewat.');
         }
 
-        if ($day->gt(today()->addDays(self::MAX_DAYS_AHEAD))) {
-            throw new BookingException('Pemesanan hanya bisa untuk ' . self::MAX_DAYS_AHEAD . ' hari ke depan.');
+        if ($day->gt(today()->addDays($maxDaysAhead))) {
+            throw new BookingException('Pemesanan hanya bisa untuk ' . $maxDaysAhead . ' hari ke depan.');
         }
 
         $startMinute = Minutes::parse($start);
@@ -357,6 +365,11 @@ class BookingService
                         'cancel_reason' => 'Dibatalkan oleh admin',
                     ]);
 
+                    if ($locked->isMemberSession()) {
+                        return 'Sesi member dibatalkan dan pendapatannya tidak lagi dihitung di laporan. '
+                            . 'Kalau member mau jadwal pengganti, buat lewat Booking Manual.';
+                    }
+
                     return $wasPaid
                         ? 'Booking dibatalkan. Booking ini sudah lunas, jadi ingat memproses pengembalian dana secara manual.'
                         : 'Booking dibatalkan.';
@@ -381,7 +394,7 @@ class BookingService
         });
     }
 
-    private function generateCode(): string
+    public function generateCode(): string
     {
         do {
             $code = 'BK-' . now()->format('Ymd') . '-' . Str::upper(Str::random(4));

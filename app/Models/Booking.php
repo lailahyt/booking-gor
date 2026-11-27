@@ -34,10 +34,12 @@ class Booking extends Model
     // Sumber booking
     public const SOURCE_WEB   = 'web';
     public const SOURCE_ADMIN = 'admin';
+    public const SOURCE_MEMBER = 'member'; // sesi mingguan dari periode member
 
     protected $fillable = [
         'code',
         'user_id',
+        'member_id',
         'customer_name',
         'customer_phone',
         'court_id',
@@ -73,6 +75,16 @@ class Booking extends Model
     public function court(): BelongsTo
     {
         return $this->belongsTo(Court::class);
+    }
+
+    public function member(): BelongsTo
+    {
+        return $this->belongsTo(Member::class);
+    }
+
+    public function isMemberSession(): bool
+    {
+        return $this->source === self::SOURCE_MEMBER;
     }
 
     public function payments(): HasMany
@@ -137,10 +149,12 @@ class Booking extends Model
             && $this->expires_at->isPast();
     }
 
-    // Boleh dibatalkan sendiri: masih aktif dan lebih dari 3 jam sebelum mulai
+    // Boleh dibatalkan sendiri: masih aktif dan lebih dari 3 jam sebelum mulai.
+    // Sesi member tidak bisa dibatalkan pelanggan; hanya admin.
     public function canBeCancelledByCustomer(): bool
     {
-        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_CONFIRMED], true)
+        return ! $this->isMemberSession()
+            && in_array($this->status, [self::STATUS_PENDING, self::STATUS_CONFIRMED], true)
             && ! $this->isExpired()
             && $this->startsAt()->gt(now()->addHours(self::CANCEL_LIMIT_HOURS));
     }
@@ -225,8 +239,10 @@ class Booking extends Model
             $actions[] = 'cancel';
         }
 
+        // sesi member dibayar lewat halaman Member (satu pembayaran untuk seluruh periode)
         if (
-            in_array($this->status, [self::STATUS_CONFIRMED, self::STATUS_COMPLETED], true)
+            ! $this->isMemberSession()
+            && in_array($this->status, [self::STATUS_CONFIRMED, self::STATUS_COMPLETED], true)
             && $this->payment_status === self::PAYMENT_UNPAID
         ) {
             $actions[] = 'pay';
