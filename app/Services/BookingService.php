@@ -13,13 +13,7 @@ use Illuminate\Support\Str;
 
 class BookingService
 {
-    // Paket durasi yang boleh dipesan (jam). Satu-satunya daftar durasi di aplikasi.
     public const PACKAGE_HOURS = [3, 4];
-
-    // Turunan dari PACKAGE_HOURS. Masih dipakai form booking manual admin dan halaman jadwal
-    // lama; dihapus saat Langkah 2 dan 3 selesai.
-    public const MIN_HOURS = 3;
-    public const MAX_HOURS = 4;
 
     public const MAX_DAYS_AHEAD = 14;
     public const MAX_ACTIVE_BOOKINGS = 3;

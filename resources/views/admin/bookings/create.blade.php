@@ -25,9 +25,9 @@
                                 class="form-select @error('court_id') is-invalid @enderror" required>
                                 <option value="">Pilih lapangan</option>
                                 @foreach ($courts as $court)
-                                    <option value="{{ $court->id }}" data-price="{{ $court->price_per_hour }}"
-                                        @selected(old('court_id') == $court->id)>
-                                        {{ $court->name }} (Rp{{ number_format($court->price_per_hour, 0, ',', '.') }}/jam)
+                                    <option value="{{ $court->id }}" data-price-3="{{ $court->price_3_hours }}"
+                                        data-price-4="{{ $court->price_4_hours }}" @selected(old('court_id') == $court->id)>
+                                        {{ $court->name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -49,33 +49,33 @@
 
                     <div class="row">
                         <div class="col-6 mb-3">
-                            <label for="start_hour" class="form-label">Jam mulai</label>
-                            <select id="start_hour" name="start_hour"
-                                class="form-select @error('start_hour') is-invalid @enderror" required>
-                                @foreach (range(0, 23) as $hour)
-                                    <option value="{{ $hour }}" @selected((int) old('start_hour', 19) === $hour)>
-                                        {{ sprintf('%02d:00', $hour) }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('start_hour')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="col-6 mb-3">
-                            <label for="duration" class="form-label">Durasi</label>
+                            <label for="duration" class="form-label">Paket</label>
                             <select id="duration" name="duration"
                                 class="form-select @error('duration') is-invalid @enderror" required>
-                                @foreach (range(1, $maxHours) as $hours)
-                                    <option value="{{ $hours }}" @selected((int) old('duration', 1) === $hours)>{{ $hours }}
-                                        jam</option>
+                                @foreach ($packageHours as $hours)
+                                    <option value="{{ $hours }}" @selected((int) old('duration', min($packageHours)) === $hours)>
+                                        Paket {{ $hours }} jam
+                                    </option>
                                 @endforeach
                             </select>
                             @error('duration')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+
+                        <div class="col-6 mb-3">
+                            <label for="start" class="form-label">Jam mulai</label>
+                            <select id="start" name="start" class="form-select @error('start') is-invalid @enderror"
+                                data-options="{{ json_encode($startOptions) }}" data-selected="{{ old('start') }}"
+                                required>
+                            </select>
+                            @error('start')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="form-text mb-3 mt-n2">
+                        Daftar jam mengikuti jam buka dan langkah waktu lapangan yang dipilih.
                     </div>
 
                     <div class="note-box mb-3" id="estimate" hidden>
@@ -132,35 +132,81 @@
 
 @push('scripts')
     <script>
-        // Perkiraan total: harga lapangan x durasi. Hanya bantuan tampilan, server yang menghitung harga sebenarnya.
+        // Hanya bantuan tampilan: menukar daftar jam mulai (dibuat server) saat lapangan atau paket berubah,
+        // dan menampilkan perkiraan total. Server memeriksa ulang semua aturan dan menghitung harga sebenarnya.
         (function() {
             var court = document.getElementById('court_id');
-            var duration = document.getElementById('duration');
+            var pack = document.getElementById('duration');
+            var start = document.getElementById('start');
             var box = document.getElementById('estimate');
             var total = document.getElementById('estimate-total');
 
-            if (!court || !duration || !box || !total) {
+            if (!court || !pack || !start || !box || !total) {
                 return;
             }
 
-            function update() {
-                var option = court.options[court.selectedIndex];
-                var price = option ? parseInt(option.getAttribute('data-price') || '0', 10) : 0;
-                var hours = parseInt(duration.value || '0', 10);
+            var options = {};
 
-                if (!price || !hours) {
+            try {
+                options = JSON.parse(start.getAttribute('data-options') || '{}');
+            } catch (e) {
+                options = {};
+            }
+
+            var wanted = start.getAttribute('data-selected') || '';
+
+            function fillStarts() {
+                var list = (options[court.value] || {})[pack.value] || [];
+                var keep = start.value || wanted;
+
+                start.innerHTML = '';
+
+                if (list.length === 0) {
+                    var empty = document.createElement('option');
+
+                    empty.value = '';
+                    empty.textContent = court.value ? 'Tidak ada jam mulai' : 'Pilih lapangan dulu';
+                    start.appendChild(empty);
+
+                    return;
+                }
+
+                list.forEach(function(item) {
+                    var option = document.createElement('option');
+
+                    option.value = item.start;
+                    option.textContent = item.start + ' - ' + item.end;
+
+                    if (item.start === keep) {
+                        option.selected = true;
+                    }
+
+                    start.appendChild(option);
+                });
+            }
+
+            function updateTotal() {
+                var option = court.options[court.selectedIndex];
+                var price = option ? parseInt(option.getAttribute('data-price-' + pack.value) || '0', 10) : 0;
+
+                if (!price) {
                     box.hidden = true;
 
                     return;
                 }
 
-                total.textContent = 'Rp' + (price * hours).toLocaleString('id-ID');
+                total.textContent = 'Rp' + price.toLocaleString('id-ID');
                 box.hidden = false;
             }
 
-            court.addEventListener('change', update);
-            duration.addEventListener('change', update);
-            update();
+            function refresh() {
+                fillStarts();
+                updateTotal();
+            }
+
+            court.addEventListener('change', refresh);
+            pack.addEventListener('change', refresh);
+            refresh();
         })();
     </script>
 @endpush

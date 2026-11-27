@@ -33,6 +33,10 @@ Route::middleware(['auth', 'admin'])
         Route::resource('courts', CourtController::class)->except(['show', 'destroy']);
         Route::patch('courts/{court}/toggle', [CourtController::class, 'toggle'])->name('courts.toggle');
         Route::get('bookings', [AdminBookingController::class, 'index'])->name('bookings.index');
+
+        Route::get('bookings/available-slots', [AdminBookingController::class, 'availableSlots'])
+            ->name('bookings.slots');
+
         Route::post('bookings/{booking}/{action}', [AdminBookingController::class, 'action'])
             ->whereIn('action', ['confirm', 'cancel', 'pay', 'complete', 'no_show'])
             ->name('bookings.action');

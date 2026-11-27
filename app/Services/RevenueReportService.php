@@ -26,16 +26,15 @@ class RevenueReportService
             ->orderBy('start_time')
             ->get();
 
-        // jam main = selisih jam selesai dan jam mulai (booking selalu jam bulat)
-        $hoursOf = fn(Booking $booking) => (int) substr($booking->end_time, 0, 2)
-            - (int) substr($booking->start_time, 0, 2);
+        // jam main dihitung dari menit (selesai - mulai), jadi jam setengah ikut benar
+        $minutesOf = fn(Booking $booking) => $booking->durationMinutes();
 
         $perCourt = $bookings
             ->groupBy('court_id')
             ->map(fn($rows) => [
                 'court' => $rows->first()->court->name,
                 'count' => $rows->count(),
-                'hours' => (int) $rows->sum($hoursOf),
+                'hours' => $this->toHours((int) $rows->sum($minutesOf)),
                 'revenue' => (int) $rows->sum('total_price'),
             ])
             ->sortByDesc('revenue')
@@ -44,9 +43,15 @@ class RevenueReportService
         return [
             'bookings' => $bookings,
             'count' => $bookings->count(),
-            'hours' => (int) $bookings->sum($hoursOf),
+            'hours' => $this->toHours((int) $bookings->sum($minutesOf)),
             'revenue' => (int) $bookings->sum('total_price'),
             'perCourt' => $perCourt,
         ];
+    }
+
+    // Menit menjadi jam: bilangan bulat bila pas (paket 3 dan 4 jam), selain itu satu desimal
+    private function toHours(int $minutes): int|float
+    {
+        return $minutes % 60 === 0 ? intdiv($minutes, 60) : round($minutes / 60, 1);
     }
 }

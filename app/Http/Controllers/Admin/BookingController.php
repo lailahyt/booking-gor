@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Court;
 use App\Services\BookingService;
+use App\Support\Minutes;
 use App\Support\Phone;
 use Illuminate\Http\Request;
 
@@ -74,11 +75,31 @@ class BookingController extends Controller
 
     public function create()
     {
+        $courts = Court::active()->orderBy('name')->get();
+
+        // Daftar jam mulai yang sah per lapangan dan per paket, dibuat server
+        // dari jam buka, jam tutup, dan langkah waktu tiap lapangan.
+        // Formulir hanya menukar isi pilihan jam; server tetap memeriksa ulang saat disimpan.
+        $startOptions = [];
+
+        foreach ($courts as $court) {
+            foreach (BookingService::PACKAGE_HOURS as $hours) {
+                $startOptions[$court->id][$hours] = array_map(
+                    fn($start) => [
+                        'start' => $start,
+                        'end' => Minutes::format(Minutes::parse($start) + $hours * 60),
+                    ],
+                    $this->bookings->startTimes($court, $hours)
+                );
+            }
+        }
+
         return view('admin.bookings.create', [
-            'courts' => Court::active()->orderBy('name')->get(),
+            'courts' => $courts,
             'minDate' => today()->toDateString(),
             'maxDate' => today()->addDays(BookingService::MAX_DAYS_AHEAD)->toDateString(),
-            'maxHours' => BookingService::MAX_HOURS,
+            'packageHours' => BookingService::PACKAGE_HOURS,
+            'startOptions' => $startOptions,
         ]);
     }
 
@@ -92,8 +113,8 @@ class BookingController extends Controller
         $data = $request->validate([
             'court_id' => ['required', 'exists:courts,id'],
             'date' => ['required', 'date_format:Y-m-d'],
-            'start_hour' => ['required', 'integer', 'between:0,23'],
-            'duration' => ['required', 'integer', 'between:' . BookingService::MIN_HOURS . ',' . BookingService::MAX_HOURS],
+            'duration' => ['required', 'integer', 'in:' . implode(',', BookingService::PACKAGE_HOURS)],
+            'start' => ['required', 'regex:/^([01]\d|2[0-3]):[0-5]\d$/'],
             'customer_name' => ['required', 'string', 'max:100'],
             'customer_phone' => ['required', 'string', 'regex:' . Phone::PATTERN],
             'notes' => ['nullable', 'string', 'max:255'],
@@ -101,19 +122,23 @@ class BookingController extends Controller
             'court_id.required' => 'Pilih lapangan.',
             'date.required' => 'Tanggal wajib diisi.',
             'date.date_format' => 'Tanggal tidak valid.',
+            'duration.required' => 'Pilih paket.',
+            'duration.in' => 'Paket harus ' . implode(' jam atau ', BookingService::PACKAGE_HOURS) . ' jam.',
+            'start.required' => 'Pilih jam mulai.',
+            'start.regex' => 'Jam mulai tidak valid.',
             'customer_name.required' => 'Nama pelanggan wajib diisi.',
             'customer_phone.required' => 'Nomor WhatsApp wajib diisi.',
             'customer_phone.regex' => 'Nomor WhatsApp tidak valid. Contoh: 081234567890',
         ]);
 
         $court = Court::findOrFail($data['court_id']);
-        $startHour = (int) $data['start_hour'];
-        $endHour = $startHour + (int) $data['duration'];
+        $endMinute = Minutes::parse($data['start']) + (int) $data['duration'] * 60;
 
-        if ($endHour > 23) {
+        // jam selesai tidak boleh melewati tengah malam
+        if ($endMinute >= 24 * 60) {
             return back()->withInput()->with(
                 'error',
-                'Jam selesai melewati 23:00. Pilih jam mulai yang lebih awal atau durasi yang lebih pendek.'
+                'Jam selesai melewati tengah malam. Pilih jam mulai yang lebih awal.'
             );
         }
 
@@ -121,8 +146,8 @@ class BookingController extends Controller
             $booking = $this->bookings->createManual(
                 $court,
                 $data['date'],
-                sprintf('%02d:00', $startHour),
-                sprintf('%02d:00', $endHour),
+                $data['start'],
+                Minutes::format($endMinute),
                 trim($data['customer_name']),
                 Phone::normalize($data['customer_phone']),
                 $data['notes'] ?? null,
